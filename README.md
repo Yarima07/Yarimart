@@ -50,7 +50,7 @@ Yarimart-Website is intended as a foundational e-commerce website that can be ad
 Follow these steps to set up the project locally:
 
 1. **Clone the repository**
-git clone https://github.com/YarimaGroup/Yarimart-Website.git
+git clone https://github.com/Jishnulal7/Yarimart
 cd Yarimart-Website
 
 2. **Install dependencies**
