@@ -1,11 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Function to get environment variables that works in both Vite and Node.js environments
+// Function to get environment variables in Vite environment
 const getEnvVariable = (key: string, defaultValue: string): string => {
-  if (typeof import.meta.env !== 'undefined') {
-    return import.meta.env[key] || process.env[key] || defaultValue;
-  }
-  return process.env[key] || defaultValue;
+  return import.meta.env[key] || defaultValue;
 };
 
 // Default values for development to prevent crashes
