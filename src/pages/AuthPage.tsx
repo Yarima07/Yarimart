@@ -76,15 +76,22 @@ const AuthPage: React.FC = () => {
         }, 3000);
       } else if (isLogin) {
         console.log(`[AUTH-PAGE] Attempting to sign in with email: ${email}`);
+        
+        // Determine admin status before sign-in
+        const isUserAdmin = checkIsAdminEmail(email);
+        console.log(`[AUTH-PAGE] Pre-login admin check: ${isUserAdmin}`);
+        
+        // Set admin status in localStorage before auth to ensure persistence
+        localStorage.setItem('isAdmin', isUserAdmin ? 'true' : 'false');
+        console.log(`[AUTH-PAGE] Pre-set localStorage admin status to: ${isUserAdmin}`);
+        
+        // Perform sign in
         await signIn(email, password);
         console.log("[AUTH-PAGE] Sign in completed successfully");
         
-        // Check admin status directly - this uses the normalized email check
-        const isUserAdmin = checkIsAdminEmail(email);
-        console.log(`[AUTH-PAGE] Admin status after login: ${isUserAdmin}`);
-        
-        // Explicitly set admin status in localStorage to ensure it's properly set
-        localStorage.setItem('isAdmin', isUserAdmin ? 'true' : 'false');
+        // Double-check admin status after login
+        console.log(`[AUTH-PAGE] Admin status check after login: ${isUserAdmin}`);
+        console.log(`[AUTH-PAGE] localStorage admin status: ${localStorage.getItem('isAdmin')}`);
         
         if (isUserAdmin) {
           console.log("[AUTH-PAGE] Admin email detected, redirecting to admin panel");
