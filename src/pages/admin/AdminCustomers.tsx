@@ -33,46 +33,30 @@ const AdminCustomers: React.FC = () => {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      // Use the auth API to fetch users
-      const { data, error } = await supabase.auth.admin.listUsers();
-      
-      if (error) throw error;
-      
-      if (!data) {
-        setCustomers([]);
-        return;
+      // Get current user's session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        throw new Error("No active session");
       }
-      
-      // Fetch order data for each user
-      const customerData = await Promise.all(
-        data.users.map(async (user) => {
-          // Get order count and total spent
-          const { data: orders, error: ordersError } = await supabase
-            .from('orders')
-            .select('total')
-            .eq('user_id', user.id);
-          
-          if (ordersError) {
-            console.error('Error fetching orders for user:', ordersError);
-            return {
-              ...user,
-              order_count: 0,
-              total_spent: 0
-            };
-          }
-          
-          const orderCount = orders?.length || 0;
-          const totalSpent = orders?.reduce((sum, order) => sum + parseFloat(order.total), 0) || 0;
-          
-          return {
-            ...user,
-            order_count: orderCount,
-            total_spent: totalSpent
-          };
-        })
+
+      // Call the secure edge function instead of using admin API directly
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, 
+        {
+          headers: {
+            'Authorization': `Bearer ${sessionData.session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+        }
       );
       
-      setCustomers(customerData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch customers');
+      }
+      
+      const data = await response.json();
+      setCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
       setCustomers([]);
