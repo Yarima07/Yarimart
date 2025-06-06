@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getCategories } from '../../utils/productUtils';
-import { Search, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Package } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -58,8 +58,8 @@ const AdminProducts: React.FC = () => {
     }
   });
 
-  // Predefined categories - fallback if database is empty
-  const predefinedCategories = [
+  // All available categories - comprehensive list
+  const allCategories = [
     'Power Tools',
     'Safety Equipment', 
     'Industrial Equipment',
@@ -74,16 +74,24 @@ const AdminProducts: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
+      console.log('Fetching categories from database...');
       const dbCategories = await getCategories();
+      console.log('Database categories:', dbCategories);
+      
       if (dbCategories.length > 0) {
-        setCategories(dbCategories);
+        // Combine database categories with all categories to ensure we have the complete list
+        const uniqueCategories = [...new Set([...allCategories, ...dbCategories])];
+        setCategories(uniqueCategories);
+        console.log('Using combined categories:', uniqueCategories);
       } else {
-        // Fallback to predefined categories if database is empty
-        setCategories(predefinedCategories);
+        // Use all predefined categories if database is empty
+        setCategories(allCategories);
+        console.log('Using predefined categories:', allCategories);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setCategories(predefinedCategories);
+      // Always fallback to all categories
+      setCategories(allCategories);
     }
   };
 
@@ -147,6 +155,7 @@ const AdminProducts: React.FC = () => {
           .eq('id', editingProduct.id);
         
         if (error) throw error;
+        console.log('Product updated successfully');
       } else {
         // Create new product
         const { error } = await supabase
@@ -154,6 +163,7 @@ const AdminProducts: React.FC = () => {
           .insert([productData]);
         
         if (error) throw error;
+        console.log('Product added successfully');
       }
 
       // Reset form and close modal
@@ -215,6 +225,7 @@ const AdminProducts: React.FC = () => {
       if (error) throw error;
       
       await fetchProducts();
+      console.log('Product deleted successfully');
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Error deleting product');
@@ -270,7 +281,7 @@ const AdminProducts: React.FC = () => {
             setEditingProduct(null);
             setIsModalOpen(true);
           }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Product
@@ -294,13 +305,44 @@ const AdminProducts: React.FC = () => {
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="border border-gray-300 dark:border-gray-600 rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+          className="border border-gray-300 dark:border-gray-600 rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white min-w-48"
         >
-          <option value="all">All Categories</option>
-          {categories.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
+          <option value="all">All Categories ({products.length})</option>
+          {categories.map(category => {
+            const categoryCount = products.filter(p => p.category === category).length;
+            return (
+              <option key={category} value={category}>
+                {category} ({categoryCount})
+              </option>
+            );
+          })}
         </select>
+      </div>
+
+      {/* Categories Overview */}
+      <div className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+        {categories.map(category => {
+          const categoryProducts = products.filter(p => p.category === category);
+          const isSelected = selectedCategory === category;
+          
+          return (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`p-4 rounded-lg border-2 transition-colors ${
+                isSelected 
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Package className={`h-6 w-6 mx-auto mb-2 ${
+                isSelected ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400'
+              }`} />
+              <div className="text-sm font-medium dark:text-white">{category}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{categoryProducts.length} products</div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
@@ -344,6 +386,10 @@ const AdminProducts: React.FC = () => {
                             className="h-10 w-10 rounded-md object-cover"
                             src={product.images[0] || '/placeholder-image.jpg'}
                             alt={product.name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.pexels.com/photos/162553/keys-workshop-mechanic-tools-162553.jpeg';
+                            }}
                           />
                         </div>
                         <div className="ml-4">
@@ -351,13 +397,19 @@ const AdminProducts: React.FC = () => {
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {product.description.substring(0, 50)}...
+                            {product.description.length > 50 
+                              ? `${product.description.substring(0, 50)}...`
+                              : product.description
+                            }
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {product.category}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">{product.category}</div>
+                      {product.subcategory && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{product.subcategory}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {formatCurrency(product.price)}
@@ -381,13 +433,15 @@ const AdminProducts: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => handleEdit(product)}
-                        className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4"
+                        className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-4 transition-colors"
+                        title="Edit Product"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        title="Delete Product"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -397,7 +451,7 @@ const AdminProducts: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                    No products found
+                    {searchQuery ? 'No products found matching your search.' : 'No products found in this category.'}
                   </td>
                 </tr>
               )}
@@ -424,7 +478,7 @@ const AdminProducts: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <X className="h-6 w-6" />
                     </button>
@@ -436,26 +490,29 @@ const AdminProducts: React.FC = () => {
                       <h4 className="text-md font-medium text-gray-900 dark:text-white">Basic Information</h4>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name *</label>
                         <input
                           type="text"
                           required
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter product name"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price (₹)</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price (₹) *</label>
                           <input
                             type="number"
                             step="0.01"
+                            min="0"
                             required
                             value={formData.price}
                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                             className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="0.00"
                           />
                         </div>
                         
@@ -468,12 +525,13 @@ const AdminProducts: React.FC = () => {
                             value={formData.discount}
                             onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
                             className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="0"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category *</label>
                         <select
                           required
                           value={formData.category}
@@ -488,17 +546,18 @@ const AdminProducts: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subcategory (Optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subcategory</label>
                         <input
                           type="text"
                           value={formData.subcategory}
                           onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
                           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="e.g., Drills, Grinders"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock Quantity</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock Quantity *</label>
                         <input
                           type="number"
                           min="0"
@@ -506,6 +565,7 @@ const AdminProducts: React.FC = () => {
                           value={formData.stock}
                           onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="0"
                         />
                       </div>
                     </div>
@@ -515,18 +575,19 @@ const AdminProducts: React.FC = () => {
                       <h4 className="text-md font-medium text-gray-900 dark:text-white">Product Details</h4>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description *</label>
                         <textarea
                           rows={3}
                           required
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Describe the product features and benefits"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags (comma-separated)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
                         <input
                           type="text"
                           value={formData.tags}
@@ -534,23 +595,25 @@ const AdminProducts: React.FC = () => {
                           placeholder="professional, heavy-duty, durable"
                           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                         />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Separate tags with commas</p>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Images (comma-separated URLs)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Images *</label>
                         <textarea
-                          rows={2}
+                          rows={3}
                           required
                           value={formData.images}
                           onChange={(e) => setFormData({ ...formData, images: e.target.value })}
                           placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                         />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Separate image URLs with commas</p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Colors (comma-separated)</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Colors</label>
                           <input
                             type="text"
                             value={formData.colors}
@@ -561,7 +624,7 @@ const AdminProducts: React.FC = () => {
                         </div>
                         
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sizes (comma-separated)</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sizes</label>
                           <input
                             type="text"
                             value={formData.sizes}
@@ -577,7 +640,7 @@ const AdminProducts: React.FC = () => {
                   {/* Specifications */}
                   <div className="mt-6">
                     <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Specifications</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Power</label>
                         <input
@@ -669,7 +732,7 @@ const AdminProducts: React.FC = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:ml-3 sm:w-auto sm:text-sm ${
+                    className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
                       submitting 
                         ? 'bg-gray-400 cursor-not-allowed' 
                         : 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600'
@@ -680,7 +743,7 @@ const AdminProducts: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                   >
                     Cancel
                   </button>
