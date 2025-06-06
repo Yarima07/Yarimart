@@ -82,9 +82,27 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
     return data as Product[];
   }
 
-  // Convert category to lowercase and replace hyphens with spaces for comparison
-  const normalizedCategory = category.toLowerCase().replace(/-/g, ' ');
+  if (!category || category === 'all') {
+    // Return all products
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching all products:', error);
+      return [];
+    }
+    
+    return data as Product[];
+  }
+
+  // Normalize category for comparison
+  const normalizedCategory = category.toLowerCase().replace(/-/g, ' ').trim();
   
+  console.log(`Searching for category: "${normalizedCategory}"`);
+  
+  // Use exact match with case-insensitive comparison
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -94,6 +112,8 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
     console.error('Error fetching products by category:', error);
     return [];
   }
+  
+  console.log(`Found ${data?.length || 0} products for category "${normalizedCategory}"`);
   
   return data as Product[];
 };
@@ -113,4 +133,21 @@ export const getRelatedProducts = async (productId: string, category: string): P
   }
   
   return data as Product[];
+};
+
+// Get all unique categories from products
+export const getCategories = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('category')
+    .order('category');
+    
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+  
+  // Extract unique categories
+  const categories = [...new Set(data.map(item => item.category))];
+  return categories;
 };

@@ -109,6 +109,30 @@ const sampleProducts = [
     reviews: 245,
     stock: 300
   },
+  {
+    name: 'Safety Goggles',
+    price: 1299,
+    discount: 0,
+    description: 'Crystal clear safety goggles with anti-fog coating for industrial work.',
+    category: 'Safety Equipment',
+    subcategory: 'Eye Protection',
+    tags: ['safety', 'goggles', 'eye protection'],
+    images: [
+      'https://images.pexels.com/photos/8005399/pexels-photo-8005399.jpeg',
+      'https://images.pexels.com/photos/4386431/pexels-photo-4386431.jpeg'
+    ],
+    colors: ['Clear', 'Tinted'],
+    specifications: {
+      material: 'Polycarbonate lens',
+      weight: '85g',
+      warranty: '1 year',
+      manufacturer: 'YariSafety',
+      countryOfOrigin: 'India'
+    },
+    rating: 4.6,
+    reviews: 89,
+    stock: 150
+  },
   
   // Industrial Equipment
   {
@@ -136,62 +160,103 @@ const sampleProducts = [
     reviews: 78,
     stock: 15
   },
-  
-  // New Arrivals
   {
-    name: 'Smart Measuring Laser Tool',
-    price: 14999,
-    discount: 0,
-    description: 'Digital laser measuring tool with Bluetooth connectivity and smartphone app integration for precise measurements.',
-    category: 'Power Tools',
-    subcategory: 'Measuring Tools',
-    tags: ['laser', 'measuring', 'smart', 'digital'],
+    name: 'Industrial Welding Machine',
+    price: 45999,
+    discount: 8,
+    description: 'Professional MIG/TIG welding machine for heavy-duty industrial applications.',
+    category: 'Industrial Equipment',
+    subcategory: 'Welding',
+    tags: ['welding', 'industrial', 'MIG', 'TIG'],
     images: [
-      'https://images.pexels.com/photos/5412270/pexels-photo-5412270.jpeg',
-      'https://images.pexels.com/photos/5412271/pexels-photo-5412271.jpeg'
+      'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg',
+      'https://images.pexels.com/photos/4321802/pexels-photo-4321802.jpeg'
     ],
-    colors: ['Black', 'Orange'],
-    sizes: ['Professional', 'Compact'],
     specifications: {
-      power: 'Rechargeable Li-ion Battery',
-      range: '0.05-70m',
-      accuracy: '±1.5mm',
-      weight: '150g',
-      dimensions: '120 x 50 x 30mm',
+      power: '3500W',
+      voltage: '220V/380V',
+      weight: '28kg',
       warranty: '2 years',
-      manufacturer: 'YariTools Pro',
+      manufacturer: 'YariIndustrial',
       countryOfOrigin: 'India'
     },
-    rating: 4.9,
-    reviews: 47,
-    stock: 65
+    rating: 4.7,
+    reviews: 134,
+    stock: 25
   },
   {
-    name: 'Multi-Function Power Station',
-    price: 32999,
-    discount: 5,
-    description: 'Portable power station with multiple outputs (AC, DC, USB) for powering tools and charging batteries on job sites without electricity.',
-    category: 'Power Tools',
-    subcategory: 'Power Supply',
-    tags: ['power', 'battery', 'charger', 'portable'],
+    name: 'Hydraulic Lifting Jack',
+    price: 12999,
+    discount: 12,
+    description: 'Heavy-duty hydraulic lifting jack for industrial and automotive use.',
+    category: 'Industrial Equipment',
+    subcategory: 'Lifting Equipment',
+    tags: ['hydraulic', 'jack', 'lifting', 'automotive'],
     images: [
-      'https://images.pexels.com/photos/163100/circuit-circuit-board-resistor-computer-163100.jpeg',
-      'https://images.pexels.com/photos/2582928/pexels-photo-2582928.jpeg'
+      'https://images.pexels.com/photos/4489061/pexels-photo-4489061.jpeg',
+      'https://images.pexels.com/photos/4321803/pexels-photo-4321803.jpeg'
     ],
-    colors: ['Black', 'Yellow'],
-    sizes: ['1000W', '1500W', '2000W'],
     specifications: {
-      capacity: '1200Wh',
-      outputs: 'AC/DC/USB/USB-C',
+      capacity: '10 tons',
+      height: '185-350mm',
       weight: '15kg',
-      dimensions: '380 x 240 x 260mm',
-      warranty: '3 years',
-      manufacturer: 'YariTools Pro',
+      warranty: '2 years',
+      manufacturer: 'YariIndustrial',
       countryOfOrigin: 'India'
     },
     rating: 4.8,
-    reviews: 29,
-    stock: 25
+    reviews: 67,
+    stock: 40
+  },
+  
+  // Hand Tools
+  {
+    name: 'Professional Screwdriver Set',
+    price: 3999,
+    discount: 20,
+    description: '32-piece professional screwdriver set with magnetic tips and ergonomic handles.',
+    category: 'Hand Tools',
+    subcategory: 'Screwdrivers',
+    tags: ['screwdriver', 'set', 'professional', 'magnetic'],
+    images: [
+      'https://images.pexels.com/photos/162553/keys-workshop-mechanic-tools-162553.jpeg',
+      'https://images.pexels.com/photos/4489794/pexels-photo-4489794.jpeg'
+    ],
+    specifications: {
+      pieces: '32',
+      material: 'Chrome Vanadium Steel',
+      weight: '1.2kg',
+      warranty: '5 years',
+      manufacturer: 'YariTools',
+      countryOfOrigin: 'India'
+    },
+    rating: 4.6,
+    reviews: 287,
+    stock: 120
+  },
+  {
+    name: 'Adjustable Wrench Set',
+    price: 2799,
+    discount: 15,
+    description: '3-piece adjustable wrench set with anti-slip grip and precision adjustment.',
+    category: 'Hand Tools',
+    subcategory: 'Wrenches',
+    tags: ['wrench', 'adjustable', 'set', 'precision'],
+    images: [
+      'https://images.pexels.com/photos/1249611/pexels-photo-1249611.jpeg',
+      'https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg'
+    ],
+    sizes: ['8"', '10"', '12"'],
+    specifications: {
+      material: 'Chrome Vanadium Steel',
+      weight: '1.8kg',
+      warranty: '3 years',
+      manufacturer: 'YariTools',
+      countryOfOrigin: 'India'
+    },
+    rating: 4.5,
+    reviews: 198,
+    stock: 85
   },
   
   // Spare Parts
@@ -217,12 +282,48 @@ const sampleProducts = [
     rating: 4.6,
     reviews: 89,
     stock: 150
+  },
+  {
+    name: 'Motor Brushes Set',
+    price: 899,
+    discount: 10,
+    description: 'Universal motor brushes set for power tools and industrial equipment.',
+    category: 'Spare Parts',
+    subcategory: 'Motor Parts',
+    tags: ['spare parts', 'motor', 'brushes', 'universal'],
+    images: [
+      'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg',
+      'https://images.pexels.com/photos/4321802/pexels-photo-4321802.jpeg'
+    ],
+    specifications: {
+      material: 'Carbon',
+      weight: '50g',
+      warranty: '3 months',
+      manufacturer: 'YariParts',
+      countryOfOrigin: 'India'
+    },
+    rating: 4.4,
+    reviews: 156,
+    stock: 200
   }
 ];
 
 const addProducts = async () => {
   try {
     console.log('Starting to add products to Supabase...');
+    
+    // First, clear existing products to avoid duplicates
+    console.log('Clearing existing products...');
+    const { error: deleteError } = await supabase
+      .from('products')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all products
+    
+    if (deleteError && deleteError.code !== 'PGRST116') { // PGRST116 means no rows to delete, which is fine
+      console.error('Error clearing existing products:', deleteError);
+    } else {
+      console.log('Existing products cleared successfully.');
+    }
     
     // Insert products in batches to avoid hitting rate limits
     const batchSize = 4;
@@ -251,6 +352,7 @@ const addProducts = async () => {
         errorCount += batch.length;
       } else {
         console.log(`Successfully processed batch ${i + 1}.`);
+        console.log(`Added products: ${batch.map(p => `${p.name} (${p.category})`).join(', ')}`);
         successCount += batch.length;
       }
       
@@ -264,6 +366,17 @@ const addProducts = async () => {
     console.log(`Total products: ${sampleProducts.length}`);
     console.log(`Successfully added: ${successCount}`);
     console.log(`Failed: ${errorCount}`);
+    
+    // Show category distribution
+    const categoryCount = sampleProducts.reduce((acc, product) => {
+      acc[product.category] = (acc[product.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    console.log('\nCategory distribution:');
+    Object.entries(categoryCount).forEach(([category, count]) => {
+      console.log(`  ${category}: ${count} products`);
+    });
     
     if (errorCount > 0) {
       console.log('Some products failed to be added. Check the logs above for details.');

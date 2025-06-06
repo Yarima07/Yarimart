@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Heart, Menu, X, User, Package, Globe } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getCategories } from '../../utils/productUtils';
 import LanguageSelector from '../shared/LanguageSelector';
 
 const Navbar: React.FC = () => {
@@ -12,6 +13,7 @@ const Navbar: React.FC = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const { cart } = useCart();
   const { user, signOut } = useAuth();
   const { isDarkMode } = useTheme();
@@ -20,12 +22,26 @@ const Navbar: React.FC = () => {
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
-  const categories = [
-    { name: 'Power Tools', path: '/catalog/power-tools' },
-    { name: 'Safety Equipment', path: '/catalog/safety-equipment' },
-    { name: 'Industrial Equipment', path: '/catalog/industrial-equipment' },
-    { name: 'New Arrivals', path: '/catalog/new' }
-  ];
+  // Fetch categories from database
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const dbCategories = await getCategories();
+        setCategories(dbCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to static categories
+        setCategories(['Power Tools', 'Safety Equipment', 'Industrial Equipment', 'Hand Tools']);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  // Convert category name to URL slug
+  const categoryToSlug = (category: string) => {
+    return category.toLowerCase().replace(/\s+/g, '-');
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +68,21 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden md:flex md:items-center md:space-x-8">
-            {categories.map((category) => (
+            {categories.slice(0, 4).map((category) => (
               <Link
-                key={category.name}
-                to={category.path}
+                key={category}
+                to={`/catalog/${categoryToSlug(category)}`}
                 className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium transition duration-150 ease-in-out"
               >
-                {category.name}
+                {category}
               </Link>
             ))}
+            <Link
+              to="/catalog/new"
+              className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium transition duration-150 ease-in-out"
+            >
+              New Arrivals
+            </Link>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -228,14 +250,21 @@ const Navbar: React.FC = () => {
             <div className="space-y-2">
               {categories.map((category) => (
                 <Link
-                  key={category.name}
-                  to={category.path}
+                  key={category}
+                  to={`/catalog/${categoryToSlug(category)}`}
                   className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {category.name}
+                  {category}
                 </Link>
               ))}
+              <Link
+                to="/catalog/new"
+                className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                New Arrivals
+              </Link>
             </div>
 
             {/* Mobile Account & Cart Section */}
