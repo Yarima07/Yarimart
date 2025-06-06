@@ -142,6 +142,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error('Authentication service is not available');
     }
     
+    // Check if trying to register with an admin email - prevent this
+    if (checkIsAdminEmail(email)) {
+      console.error('[AUTH] Attempted to register with admin email');
+      throw new Error('This email address cannot be used for regular user registration');
+    }
+    
     console.log(`[AUTH] Attempting to sign up: ${email}`);
     const { data, error } = await supabase.auth.signUp({
       email,

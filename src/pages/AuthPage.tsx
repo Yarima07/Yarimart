@@ -53,6 +53,18 @@ const AuthPage: React.FC = () => {
     }
   }, [isAdmin, navigate]);
 
+  // Handle regular user signup attempts with admin emails
+  useEffect(() => {
+    if (!isLogin && isAdminEmail) {
+      setError('This email is reserved for admin use only and cannot be used for regular user registration.');
+    } else {
+      // Clear the error when email changes or mode changes
+      if (error === 'This email is reserved for admin use only and cannot be used for regular user registration.') {
+        setError('');
+      }
+    }
+  }, [email, isLogin, isAdminEmail, error]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -61,6 +73,11 @@ const AuthPage: React.FC = () => {
 
     try {
       console.log('[AUTH-PAGE] Form submitted:', isLogin ? 'login' : 'signup', email);
+      
+      // Prevent signup with admin email for regular users
+      if (!isLogin && isAdminEmail) {
+        throw new Error('This email is reserved for admin use only and cannot be used for regular user registration.');
+      }
       
       if (isForgotPassword) {
         console.log('[AUTH-PAGE] Initiating password reset for:', email);
@@ -138,7 +155,7 @@ const AuthPage: React.FC = () => {
             <div className="mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-red-400\" aria-hidden="true" />
+                  <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
@@ -194,9 +211,9 @@ const AuthPage: React.FC = () => {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5\" aria-hidden="true" />
+                      <EyeOff className="h-5 w-5" aria-hidden="true" />
                     ) : (
-                      <Eye className="h-5 w-5\" aria-hidden="true" />
+                      <Eye className="h-5 w-5" aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -206,9 +223,9 @@ const AuthPage: React.FC = () => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (!isLogin && isAdminEmail)}
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600 ${
-                  isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                  (isLoading || (!isLogin && isAdminEmail)) ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
               >
                 {isLoading 
