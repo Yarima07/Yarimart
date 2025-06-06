@@ -62,7 +62,7 @@ const AdminCustomers: React.FC = () => {
           }
           
           const orderCount = orders?.length || 0;
-          const totalSpent = orders?.reduce((sum, order) => sum + order.total, 0) || 0;
+          const totalSpent = orders?.reduce((sum, order) => sum + parseFloat(order.total), 0) || 0;
           
           return {
             ...user,

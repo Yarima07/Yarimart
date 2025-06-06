@@ -38,17 +38,32 @@ const AdminDashboard: React.FC = () => {
           
         if (productsError) throw productsError;
         
-        // Fetch recent orders
+        // Fetch recent orders - Changed the join syntax to match table name
         const { data: recent, error: recentError } = await supabase
           .from('orders')
-          .select('*, user:user_id(email)')
+          .select(`
+            *,
+            users(email)
+          `)
           .order('created_at', { ascending: false })
           .limit(5);
           
-        if (recentError) throw recentError;
+        if (recentError) {
+          console.error('Error fetching recent orders:', recentError);
+          // If the join fails, try to get just the orders without user emails
+          const { data: basicOrders } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5);
+            
+          setRecentOrders(basicOrders || []);
+        } else {
+          setRecentOrders(recent || []);
+        }
         
         // Calculate total revenue
-        const totalRevenue = orders?.reduce((sum, order) => sum + order.total, 0) || 0;
+        const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0) || 0;
         
         setStats({
           totalOrders: orders?.length || 0,
@@ -56,10 +71,15 @@ const AdminDashboard: React.FC = () => {
           totalProducts: products?.length || 0,
           totalRevenue
         });
-        
-        setRecentOrders(recent || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Set default values in case of error
+        setStats({
+          totalOrders: 0,
+          pendingOrders: 0,
+          totalProducts: 0,
+          totalRevenue: 0
+        });
       } finally {
         setLoading(false);
       }
@@ -187,7 +207,7 @@ const AdminDashboard: React.FC = () => {
                       {order.id.slice(0, 8)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {order.user?.email || order.shipping_address.fullName}
+                      {order.users?.email || (order.shipping_address && order.shipping_address.fullName) || 'Customer'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(order.created_at)}
