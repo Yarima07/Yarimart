@@ -1,4 +1,5 @@
-import 'dotenv/config'; // Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables from .env file
 import { createClient } from '@supabase/supabase-js';
 
 // Create a Supabase client
