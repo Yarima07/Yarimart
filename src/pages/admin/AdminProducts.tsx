@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Plus, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, AlertCircle, Star } from 'lucide-react';
 import { Product } from '../../types/product';
 
 const AdminProducts: React.FC = () => {
