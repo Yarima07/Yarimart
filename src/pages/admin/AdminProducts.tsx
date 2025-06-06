@@ -20,6 +20,7 @@ const AdminProducts: React.FC = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
+      console.log('[ADMIN-PRODUCTS] Fetching products');
       let query = supabase.from('products').select('*');
       
       if (categoryFilter !== 'all') {
@@ -28,17 +29,22 @@ const AdminProducts: React.FC = () => {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('[ADMIN-PRODUCTS] Error fetching products:', error);
+        throw error;
+      }
       
       setProducts(data as Product[] || []);
+      console.log(`[ADMIN-PRODUCTS] Fetched ${data?.length || 0} products`);
       
       // Extract unique categories
       if (data) {
         const uniqueCategories = Array.from(new Set(data.map(product => product.category)));
         setCategories(uniqueCategories);
+        console.log(`[ADMIN-PRODUCTS] Found ${uniqueCategories.length} unique categories`);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('[ADMIN-PRODUCTS] Error in fetchProducts:', error);
     } finally {
       setLoading(false);
     }

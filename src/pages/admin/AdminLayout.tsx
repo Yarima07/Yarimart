@@ -10,33 +10,27 @@ const AdminLayout: React.FC = () => {
   // Check if user has admin role
   useEffect(() => {
     const checkAdminAccess = async () => {
-      // First check if there's an admin status in localStorage
+      // Get admin status from localStorage and context
       const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
-      const userEmail = user?.email || 'no email';
+      const effectiveIsAdmin = isAdmin || storedAdminStatus;
       
-      console.log(`[ADMIN] Checking access for user: ${userEmail}`);
-      console.log(`[ADMIN] Context isAdmin value: ${isAdmin}`);
-      console.log(`[ADMIN] localStorage isAdmin value: ${storedAdminStatus}`);
-      
+      console.log(`[ADMIN-LAYOUT] Access check - localStorage admin: ${storedAdminStatus}, context admin: ${isAdmin}`);
+      console.log(`[ADMIN-LAYOUT] Effective admin status: ${effectiveIsAdmin}`);
+      console.log(`[ADMIN-LAYOUT] User email: ${user?.email || 'no user'}`);
+
       if (!user) {
-        console.log('[ADMIN] No user found, redirecting to auth page');
+        console.log('[ADMIN-LAYOUT] No user found, redirecting to auth');
         navigate('/auth');
         return;
       }
       
-      // Use either the context value or localStorage as a fallback
-      if (!isAdmin && !storedAdminStatus) {
-        console.log(`[ADMIN] User ${userEmail} is not an admin, redirecting to home`);
+      if (!effectiveIsAdmin) {
+        console.log('[ADMIN-LAYOUT] User is not an admin, redirecting to home');
         navigate('/');
         return;
       }
       
-      // If we're here but isAdmin is false in context, sync with localStorage
-      if (!isAdmin && storedAdminStatus) {
-        console.log(`[ADMIN] User ${userEmail} has admin status in localStorage but not in context`);
-      }
-      
-      console.log(`[ADMIN] User ${userEmail} access confirmed as admin`);
+      console.log('[ADMIN-LAYOUT] Admin access confirmed');
     };
     
     checkAdminAccess();

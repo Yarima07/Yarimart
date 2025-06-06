@@ -31,7 +31,10 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    // Initialize from localStorage on component mount
+    return localStorage.getItem('isAdmin') === 'true';
+  });
   const [loading, setLoading] = useState(true);
 
   // Helper function to check if an email is in the admin list
@@ -49,13 +52,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return false;
   };
 
+  // Update localStorage whenever isAdmin changes
+  useEffect(() => {
+    if (isAdmin) {
+      localStorage.setItem('isAdmin', 'true');
+      console.log('[AUTH] Admin status set to TRUE in localStorage');
+    } else {
+      // Only remove if we're sure the user is not an admin
+      if (user !== null) {
+        localStorage.setItem('isAdmin', 'false');
+        console.log('[AUTH] Admin status set to FALSE in localStorage');
+      }
+    }
+  }, [isAdmin, user]);
+
   useEffect(() => {
     console.log('[AUTH] Provider initialized');
-    
-    // Get admin status from localStorage when component mounts
-    const storedIsAdmin = localStorage.getItem('isAdmin') === 'true';
-    console.log(`[AUTH] Retrieved admin status from localStorage: ${storedIsAdmin}`);
-    setIsAdmin(storedIsAdmin);
+    console.log(`[AUTH] Initial admin status from localStorage: ${localStorage.getItem('isAdmin')}`);
     
     // Only run auth checks if Supabase is configured
     if (isSupabaseConfigured()) {
@@ -70,16 +83,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           const userEmail = session.user.email || '';
           const userIsAdmin = checkIsAdminEmail(userEmail);
+          console.log(`[AUTH] User authenticated, checking admin status for: ${userEmail}`);
+          console.log(`[AUTH] Admin check result: ${userIsAdmin}`);
+          
           setIsAdmin(userIsAdmin);
-          
-          // Store admin status in localStorage for persistence
-          localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
-          
-          console.log(`[AUTH] User authenticated, admin status: ${userIsAdmin}, email: ${userEmail}`);
         } else {
-          // Only remove isAdmin from localStorage if we're sure there's no user
-          console.log('[AUTH] No active user session, clearing admin status');
-          localStorage.removeItem('isAdmin');
+          console.log('[AUTH] No active user session');
+          // Only clear admin status if we're sure there's no user
+          setIsAdmin(false);
         }
         
         setLoading(false);
@@ -94,16 +105,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           const userEmail = session.user.email || '';
           const userIsAdmin = checkIsAdminEmail(userEmail);
+          console.log(`[AUTH] Auth state changed, checking admin for: ${userEmail}`);
+          console.log(`[AUTH] Admin check result: ${userIsAdmin}`);
+          
           setIsAdmin(userIsAdmin);
-          
-          // Store admin status in localStorage for persistence
-          localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
-          
-          console.log(`[AUTH] Auth state changed, admin status: ${userIsAdmin}, email: ${userEmail}`);
         } else {
-          setIsAdmin(false);
-          localStorage.removeItem('isAdmin');
           console.log('[AUTH] Auth state changed: No user');
+          setIsAdmin(false);
         }
         
         setLoading(false);
@@ -148,7 +156,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // First check if this is an admin email
       const isAdminUser = checkIsAdminEmail(email);
-      console.log(`[AUTH] Is admin email: ${isAdminUser}`);
+      console.log(`[AUTH] Is admin email check result: ${isAdminUser}`);
+      
+      // Set the admin status in localStorage immediately to ensure persistence
+      if (isAdminUser) {
+        localStorage.setItem('isAdmin', 'true');
+        console.log('[AUTH] Set admin=true in localStorage before login');
+      } else {
+        localStorage.setItem('isAdmin', 'false');
+        console.log('[AUTH] Set admin=false in localStorage before login');
+      }
       
       // Sign in with password
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -163,10 +180,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log("[AUTH] Sign in successful:", data.user?.email);
       
-      // Update admin status
+      // Update admin status in state
       setIsAdmin(isAdminUser);
-      localStorage.setItem('isAdmin', isAdminUser ? 'true' : 'false');
-      console.log(`[AUTH] Setting admin status to: ${isAdminUser}`);
+      console.log(`[AUTH] Set isAdmin state to: ${isAdminUser}`);
       
       return;
     } catch (err) {
@@ -191,6 +207,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("[AUTH] Sign out successful");
     setIsAdmin(false);
     localStorage.removeItem('isAdmin');
+    console.log("[AUTH] Removed admin status from localStorage");
   };
 
   return (
