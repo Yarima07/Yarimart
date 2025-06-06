@@ -16,12 +16,17 @@ const AdminDashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
+        console.log('[ADMIN-DASHBOARD] Fetching dashboard data');
+        
         // Fetch order stats
         const { data: orders, error: ordersError } = await supabase
           .from('orders')
           .select('*');
           
-        if (ordersError) throw ordersError;
+        if (ordersError) {
+          console.error('[ADMIN-DASHBOARD] Error fetching orders:', ordersError);
+          throw ordersError;
+        }
         
         // Fetch pending orders
         const { data: pendingOrders, error: pendingError } = await supabase
@@ -29,65 +34,92 @@ const AdminDashboard: React.FC = () => {
           .select('*')
           .eq('status', 'pending');
           
-        if (pendingError) throw pendingError;
+        if (pendingError) {
+          console.error('[ADMIN-DASHBOARD] Error fetching pending orders:', pendingError);
+          throw pendingError;
+        }
         
         // Fetch products count
         const { data: products, error: productsError } = await supabase
           .from('products')
           .select('id');
           
-        if (productsError) throw productsError;
+        if (productsError) {
+          console.error('[ADMIN-DASHBOARD] Error fetching products:', productsError);
+          throw productsError;
+        }
         
-        // Fetch recent orders - using a different approach to avoid join issues
-        const { data: recent, error: recentError } = await supabase
+        // Fetch recent orders
+        const { data: recentOrdersData, error: recentError } = await supabase
           .from('orders')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
           
         if (recentError) {
-          console.error('Error fetching recent orders:', recentError);
-          // If the fetch fails, set empty array
+          console.error('[ADMIN-DASHBOARD] Error fetching recent orders:', recentError);
           setRecentOrders([]);
         } else {
-          // Get the email for each order separately since join doesn't work
-          const ordersWithEmail = await Promise.all(
-            (recent || []).map(async (order) => {
+          // For each order, try to fetch the user email separately
+          const ordersWithEmails = await Promise.all(
+            (recentOrdersData || []).map(async (order) => {
               if (order.user_id) {
                 try {
-                  const { data: userData } = await supabase
+                  // Fetch user email directly
+                  const { data: userData, error: userError } = await supabase
                     .from('users')
                     .select('email')
                     .eq('id', order.user_id)
                     .single();
-                    
+                  
+                  if (userError || !userData) {
+                    console.log(`[ADMIN-DASHBOARD] No user found for ID ${order.user_id}`);
+                    return {
+                      ...order,
+                      users: { email: order.shipping_address?.fullName || 'Customer' }
+                    };
+                  }
+                  
                   return {
                     ...order,
-                    users: userData || { email: 'Customer' }
+                    users: { email: userData.email }
                   };
-                } catch (err) {
-                  console.error('Error fetching user for order:', err);
+                } catch (error) {
+                  console.error('[ADMIN-DASHBOARD] Error fetching user:', error);
                   return {
                     ...order,
-                    users: { email: 'Customer' }
+                    users: { email: order.shipping_address?.fullName || 'Customer' }
                   };
                 }
               }
+              
               return {
                 ...order,
-                users: { email: 'Customer' }
+                users: { email: order.shipping_address?.fullName || 'Customer' }
               };
             })
           );
           
-          setRecentOrders(ordersWithEmail || []);
+          setRecentOrders(ordersWithEmails);
         }
         
-        // Calculate total revenue - ensure we handle null or undefined values
+        // Calculate total revenue - safely handle potential NaN values
         const totalRevenue = orders?.reduce((sum, order) => {
-          const orderTotal = parseFloat(order.total) || 0;
+          // Make sure we have a valid number before adding
+          const orderTotal = parseFloat(order.total);
+          if (isNaN(orderTotal)) {
+            console.warn(`[ADMIN-DASHBOARD] Invalid order total value:`, order.total);
+            return sum;
+          }
           return sum + orderTotal;
         }, 0) || 0;
+        
+        console.log('[ADMIN-DASHBOARD] Stats calculated:', {
+          orders: orders?.length || 0,
+          pendingOrders: pendingOrders?.length || 0,
+          products: products?.length || 0,
+          totalRevenue
+        });
         
         setStats({
           totalOrders: orders?.length || 0,
@@ -96,7 +128,7 @@ const AdminDashboard: React.FC = () => {
           totalRevenue
         });
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('[ADMIN-DASHBOARD] Error fetching dashboard data:', error);
         // Set default values in case of error
         setStats({
           totalOrders: 0,

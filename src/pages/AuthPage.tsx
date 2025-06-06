@@ -23,12 +23,32 @@ const AuthPage: React.FC = () => {
   const { signIn, signUp, isAdmin } = useAuth();
   const navigate = useNavigate();
   
+  // Helper function to normalize and check admin emails
+  const checkIsAdminEmail = (email: string): boolean => {
+    if (!email) return false;
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    for (const adminEmail of ADMIN_EMAILS) {
+      if (adminEmail.toLowerCase().trim() === normalizedEmail) {
+        console.log(`[AUTH-PAGE] Email ${normalizedEmail} is recognized as admin`);
+        return true;
+      }
+    }
+    console.log(`[AUTH-PAGE] Email ${normalizedEmail} is NOT an admin`);
+    return false;
+  };
+  
   // Check if the email is an admin email
-  const isAdminEmail = ADMIN_EMAILS.includes(email);
+  const isAdminEmail = checkIsAdminEmail(email);
   
   useEffect(() => {
+    // Check localStorage first for admin status
+    const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
+    console.log(`[AUTH-PAGE] Initial check - stored admin status: ${storedAdminStatus}, context admin status: ${isAdmin}`);
+    
     // If already logged in as admin, redirect to admin panel
-    if (isAdmin) {
+    if (isAdmin || storedAdminStatus) {
+      console.log('[AUTH-PAGE] User is admin, redirecting to admin panel');
       navigate('/admin');
     }
   }, [isAdmin, navigate]);
@@ -40,10 +60,10 @@ const AuthPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('Form submitted:', isLogin ? 'login' : 'signup', email);
+      console.log('[AUTH-PAGE] Form submitted:', isLogin ? 'login' : 'signup', email);
       
       if (isForgotPassword) {
-        console.log('Initiating password reset for:', email);
+        console.log('[AUTH-PAGE] Initiating password reset for:', email);
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
@@ -55,19 +75,26 @@ const AuthPage: React.FC = () => {
           setIsForgotPassword(false);
         }, 3000);
       } else if (isLogin) {
-        console.log(`Attempting to sign in with email: ${email}`);
+        console.log(`[AUTH-PAGE] Attempting to sign in with email: ${email}`);
         await signIn(email, password);
-        console.log("Sign in completed successfully");
+        console.log("[AUTH-PAGE] Sign in completed successfully");
         
-        if (isAdminEmail) {
-          console.log("Admin email detected, redirecting to admin panel");
+        // Check admin status directly - this uses the normalized email check
+        const isUserAdmin = checkIsAdminEmail(email);
+        console.log(`[AUTH-PAGE] Admin status after login: ${isUserAdmin}`);
+        
+        // Explicitly set admin status in localStorage to ensure it's properly set
+        localStorage.setItem('isAdmin', isUserAdmin ? 'true' : 'false');
+        
+        if (isUserAdmin) {
+          console.log("[AUTH-PAGE] Admin email detected, redirecting to admin panel");
           navigate('/admin');
         } else {
-          console.log("Regular user, redirecting to home");
+          console.log("[AUTH-PAGE] Regular user, redirecting to home");
           navigate('/');
         }
       } else {
-        console.log('Registering new user:', email);
+        console.log('[AUTH-PAGE] Registering new user:', email);
         await signUp(email, password);
         setSuccess('Registration successful! Please check your email to verify your account.');
         setTimeout(() => {
@@ -75,7 +102,7 @@ const AuthPage: React.FC = () => {
         }, 3000);
       }
     } catch (err) {
-      console.error("Auth error:", err);
+      console.error("[AUTH-PAGE] Auth error:", err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
@@ -104,7 +131,7 @@ const AuthPage: React.FC = () => {
             <div className="mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-red-400\" aria-hidden="true" />
+                  <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
@@ -160,9 +187,9 @@ const AuthPage: React.FC = () => {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5\" aria-hidden="true" />
+                      <EyeOff className="h-5 w-5" aria-hidden="true" />
                     ) : (
-                      <Eye className="h-5 w-5\" aria-hidden="true" />
+                      <Eye className="h-5 w-5" aria-hidden="true" />
                     )}
                   </button>
                 </div>

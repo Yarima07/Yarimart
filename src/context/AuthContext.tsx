@@ -31,29 +31,39 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   // Helper function to check if an email is in the admin list
   const checkIsAdminEmail = (email: string): boolean => {
+    if (!email) return false;
+    
     const normalizedEmail = email.toLowerCase().trim();
-    const result = ADMIN_EMAILS.some(adminEmail => 
-      adminEmail.toLowerCase().trim() === normalizedEmail
-    );
-    console.log(`Checking if ${normalizedEmail} is admin: ${result}`);
-    return result;
+    for (const adminEmail of ADMIN_EMAILS) {
+      if (adminEmail.toLowerCase().trim() === normalizedEmail) {
+        console.log(`[AUTH] Email ${normalizedEmail} is recognized as admin`);
+        return true;
+      }
+    }
+    console.log(`[AUTH] Email ${normalizedEmail} is NOT an admin`);
+    return false;
   };
 
   useEffect(() => {
-    console.log('Auth Provider initialized');
+    console.log('[AUTH] Provider initialized');
+    
+    // Get admin status from localStorage when component mounts
+    const storedIsAdmin = localStorage.getItem('isAdmin') === 'true';
+    console.log(`[AUTH] Retrieved admin status from localStorage: ${storedIsAdmin}`);
+    setIsAdmin(storedIsAdmin);
     
     // Only run auth checks if Supabase is configured
     if (isSupabaseConfigured()) {
-      console.log('Checking Supabase auth session...');
+      console.log('[AUTH] Checking Supabase auth session...');
       
       // Check active sessions and sets the user
       supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('Session retrieved:', session ? 'yes' : 'no');
+        console.log('[AUTH] Session retrieved:', session ? 'yes' : 'no');
         setUser(session?.user ?? null);
         
         // Check if user is an admin
@@ -65,11 +75,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Store admin status in localStorage for persistence
           localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
           
-          console.log(`User authenticated, admin status: ${userIsAdmin}, email: ${userEmail}`);
+          console.log(`[AUTH] User authenticated, admin status: ${userIsAdmin}, email: ${userEmail}`);
         } else {
-          setIsAdmin(false);
+          // Only remove isAdmin from localStorage if we're sure there's no user
+          console.log('[AUTH] No active user session, clearing admin status');
           localStorage.removeItem('isAdmin');
-          console.log('No active user session');
         }
         
         setLoading(false);
@@ -77,7 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Listen for changes on auth state
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        console.log(`Auth state changed: ${event}`);
+        console.log(`[AUTH] Auth state changed: ${event}`);
         setUser(session?.user ?? null);
         
         // Check if user is an admin
@@ -89,11 +99,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Store admin status in localStorage for persistence
           localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
           
-          console.log(`Auth state changed, admin status: ${userIsAdmin}, email: ${userEmail}`);
+          console.log(`[AUTH] Auth state changed, admin status: ${userIsAdmin}, email: ${userEmail}`);
         } else {
           setIsAdmin(false);
           localStorage.removeItem('isAdmin');
-          console.log('Auth state changed: No user');
+          console.log('[AUTH] Auth state changed: No user');
         }
         
         setLoading(false);
@@ -101,7 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return () => subscription.unsubscribe();
     } else {
-      console.error('Supabase is not properly configured');
+      console.error('[AUTH] Supabase is not properly configured');
       // If Supabase is not configured, just set loading to false
       setLoading(false);
     }
@@ -109,36 +119,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string) => {
     if (!isSupabaseConfigured()) {
-      console.error('Supabase is not properly configured');
+      console.error('[AUTH] Supabase is not properly configured');
       throw new Error('Authentication service is not available');
     }
     
-    console.log(`Attempting to sign up: ${email}`);
+    console.log(`[AUTH] Attempting to sign up: ${email}`);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     
     if (error) {
-      console.error("Sign up error:", error.message);
+      console.error("[AUTH] Sign up error:", error.message);
       throw error;
     }
     
-    console.log("Sign up response:", data);
+    console.log("[AUTH] Sign up response:", data);
   };
 
   const signIn = async (email: string, password: string) => {
     if (!isSupabaseConfigured()) {
-      console.error('Supabase is not properly configured');
+      console.error('[AUTH] Supabase is not properly configured');
       throw new Error('Authentication service is not available');
     }
     
-    console.log(`Attempting to sign in: ${email}`);
+    console.log(`[AUTH] Attempting to sign in: ${email}`);
     
     try {
       // First check if this is an admin email
       const isAdminUser = checkIsAdminEmail(email);
-      console.log(`Is admin email: ${isAdminUser}`);
+      console.log(`[AUTH] Is admin email: ${isAdminUser}`);
       
       // Sign in with password
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -147,38 +157,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) {
-        console.error("Sign in error:", error);
+        console.error("[AUTH] Sign in error:", error);
         throw error;
       }
       
-      console.log("Sign in successful:", data.user?.email);
+      console.log("[AUTH] Sign in successful:", data.user?.email);
       
       // Update admin status
       setIsAdmin(isAdminUser);
       localStorage.setItem('isAdmin', isAdminUser ? 'true' : 'false');
-      console.log(`Setting admin status to: ${isAdminUser}`);
+      console.log(`[AUTH] Setting admin status to: ${isAdminUser}`);
       
       return;
     } catch (err) {
-      console.error("Sign in exception:", err);
+      console.error("[AUTH] Sign in exception:", err);
       throw err;
     }
   };
 
   const signOut = async () => {
     if (!isSupabaseConfigured()) {
-      console.error('Supabase is not properly configured');
+      console.error('[AUTH] Supabase is not properly configured');
       throw new Error('Authentication service is not available');
     }
     
-    console.log("Signing out");
+    console.log("[AUTH] Signing out");
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error("Sign out error:", error);
+      console.error("[AUTH] Sign out error:", error);
       throw error;
     }
     
-    console.log("Sign out successful");
+    console.log("[AUTH] Sign out successful");
     setIsAdmin(false);
     localStorage.removeItem('isAdmin');
   };

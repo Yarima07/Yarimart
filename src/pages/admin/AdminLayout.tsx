@@ -12,25 +12,31 @@ const AdminLayout: React.FC = () => {
     const checkAdminAccess = async () => {
       // First check if there's an admin status in localStorage
       const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
-      const userEmail = user?.email || '';
+      const userEmail = user?.email || 'no email';
       
-      console.log(`AdminLayout: Checking access for ${userEmail}`);
-      console.log(`AdminLayout: Auth context isAdmin: ${isAdmin}`);
-      console.log(`AdminLayout: Stored admin status: ${storedAdminStatus}`);
+      console.log(`[ADMIN] Checking access for user: ${userEmail}`);
+      console.log(`[ADMIN] Context isAdmin value: ${isAdmin}`);
+      console.log(`[ADMIN] localStorage isAdmin value: ${storedAdminStatus}`);
       
       if (!user) {
-        console.log('No user found, redirecting to auth page');
+        console.log('[ADMIN] No user found, redirecting to auth page');
         navigate('/auth');
         return;
       }
       
+      // Use either the context value or localStorage as a fallback
       if (!isAdmin && !storedAdminStatus) {
-        console.log(`User ${userEmail} is not an admin, redirecting to home`);
+        console.log(`[ADMIN] User ${userEmail} is not an admin, redirecting to home`);
         navigate('/');
         return;
       }
       
-      console.log(`User ${userEmail} is admin, allowing access to admin panel`);
+      // If we're here but isAdmin is false in context, sync with localStorage
+      if (!isAdmin && storedAdminStatus) {
+        console.log(`[ADMIN] User ${userEmail} has admin status in localStorage but not in context`);
+      }
+      
+      console.log(`[ADMIN] User ${userEmail} access confirmed as admin`);
     };
     
     checkAdminAccess();
