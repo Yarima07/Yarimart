@@ -34,6 +34,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to check if an email is in the admin list
+  const checkIsAdminEmail = (email: string): boolean => {
+    const normalizedEmail = email.toLowerCase().trim();
+    const result = ADMIN_EMAILS.some(adminEmail => 
+      adminEmail.toLowerCase().trim() === normalizedEmail
+    );
+    console.log(`Checking if ${normalizedEmail} is admin: ${result}`);
+    return result;
+  };
+
   useEffect(() => {
     console.log('Auth Provider initialized');
     
@@ -49,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Check if user is an admin
         if (session?.user) {
           const userEmail = session.user.email || '';
-          const userIsAdmin = ADMIN_EMAILS.includes(userEmail);
+          const userIsAdmin = checkIsAdminEmail(userEmail);
           setIsAdmin(userIsAdmin);
           
           // Store admin status in localStorage for persistence
@@ -73,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Check if user is an admin
         if (session?.user) {
           const userEmail = session.user.email || '';
-          const userIsAdmin = ADMIN_EMAILS.includes(userEmail);
+          const userIsAdmin = checkIsAdminEmail(userEmail);
           setIsAdmin(userIsAdmin);
           
           // Store admin status in localStorage for persistence
@@ -127,7 +137,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       // First check if this is an admin email
-      const isAdminUser = ADMIN_EMAILS.includes(email);
+      const isAdminUser = checkIsAdminEmail(email);
       console.log(`Is admin email: ${isAdminUser}`);
       
       // Sign in with password

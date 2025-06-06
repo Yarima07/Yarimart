@@ -12,6 +12,11 @@ const AdminLayout: React.FC = () => {
     const checkAdminAccess = async () => {
       // First check if there's an admin status in localStorage
       const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
+      const userEmail = user?.email || '';
+      
+      console.log(`AdminLayout: Checking access for ${userEmail}`);
+      console.log(`AdminLayout: Auth context isAdmin: ${isAdmin}`);
+      console.log(`AdminLayout: Stored admin status: ${storedAdminStatus}`);
       
       if (!user) {
         console.log('No user found, redirecting to auth page');
@@ -20,12 +25,12 @@ const AdminLayout: React.FC = () => {
       }
       
       if (!isAdmin && !storedAdminStatus) {
-        console.log('User is not an admin, redirecting to home');
+        console.log(`User ${userEmail} is not an admin, redirecting to home`);
         navigate('/');
         return;
       }
       
-      console.log('User is admin, allowing access to admin panel');
+      console.log(`User ${userEmail} is admin, allowing access to admin panel`);
     };
     
     checkAdminAccess();

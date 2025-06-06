@@ -83,8 +83,11 @@ const AdminDashboard: React.FC = () => {
           setRecentOrders(ordersWithEmail || []);
         }
         
-        // Calculate total revenue
-        const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0) || 0;
+        // Calculate total revenue - ensure we handle null or undefined values
+        const totalRevenue = orders?.reduce((sum, order) => {
+          const orderTotal = parseFloat(order.total) || 0;
+          return sum + orderTotal;
+        }, 0) || 0;
         
         setStats({
           totalOrders: orders?.length || 0,
