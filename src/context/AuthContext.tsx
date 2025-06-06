@@ -48,11 +48,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Check if user is an admin
         if (session?.user) {
-          const userIsAdmin = ADMIN_EMAILS.includes(session.user.email || '');
+          const userEmail = session.user.email || '';
+          const userIsAdmin = ADMIN_EMAILS.includes(userEmail);
           setIsAdmin(userIsAdmin);
-          console.log(`User authenticated, admin status: ${userIsAdmin}, email: ${session.user.email}`);
+          
+          // Store admin status in localStorage for persistence
+          localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
+          
+          console.log(`User authenticated, admin status: ${userIsAdmin}, email: ${userEmail}`);
         } else {
           setIsAdmin(false);
+          localStorage.removeItem('isAdmin');
           console.log('No active user session');
         }
         
@@ -66,11 +72,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Check if user is an admin
         if (session?.user) {
-          const userIsAdmin = ADMIN_EMAILS.includes(session.user.email || '');
+          const userEmail = session.user.email || '';
+          const userIsAdmin = ADMIN_EMAILS.includes(userEmail);
           setIsAdmin(userIsAdmin);
-          console.log(`Auth state changed, admin status: ${userIsAdmin}, email: ${session.user.email}`);
+          
+          // Store admin status in localStorage for persistence
+          localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
+          
+          console.log(`Auth state changed, admin status: ${userIsAdmin}, email: ${userEmail}`);
         } else {
           setIsAdmin(false);
+          localStorage.removeItem('isAdmin');
           console.log('Auth state changed: No user');
         }
         
@@ -133,6 +145,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Update admin status
       setIsAdmin(isAdminUser);
+      localStorage.setItem('isAdmin', isAdminUser ? 'true' : 'false');
       console.log(`Setting admin status to: ${isAdminUser}`);
       
       return;
@@ -157,6 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     console.log("Sign out successful");
     setIsAdmin(false);
+    localStorage.removeItem('isAdmin');
   };
 
   return (

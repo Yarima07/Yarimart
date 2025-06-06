@@ -10,15 +10,22 @@ const AdminLayout: React.FC = () => {
   // Check if user has admin role
   useEffect(() => {
     const checkAdminAccess = async () => {
+      // First check if there's an admin status in localStorage
+      const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
+      
       if (!user) {
+        console.log('No user found, redirecting to auth page');
         navigate('/auth');
         return;
       }
       
-      if (!isAdmin) {
+      if (!isAdmin && !storedAdminStatus) {
+        console.log('User is not an admin, redirecting to home');
         navigate('/');
         return;
       }
+      
+      console.log('User is admin, allowing access to admin panel');
     };
     
     checkAdminAccess();

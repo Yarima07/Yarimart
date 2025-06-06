@@ -38,28 +38,49 @@ const AdminDashboard: React.FC = () => {
           
         if (productsError) throw productsError;
         
-        // Fetch recent orders - Changed the join syntax to match table name
+        // Fetch recent orders - using a different approach to avoid join issues
         const { data: recent, error: recentError } = await supabase
           .from('orders')
-          .select(`
-            *,
-            users(email)
-          `)
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
           
         if (recentError) {
           console.error('Error fetching recent orders:', recentError);
-          // If the join fails, try to get just the orders without user emails
-          const { data: basicOrders } = await supabase
-            .from('orders')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(5);
-            
-          setRecentOrders(basicOrders || []);
+          // If the fetch fails, set empty array
+          setRecentOrders([]);
         } else {
-          setRecentOrders(recent || []);
+          // Get the email for each order separately since join doesn't work
+          const ordersWithEmail = await Promise.all(
+            (recent || []).map(async (order) => {
+              if (order.user_id) {
+                try {
+                  const { data: userData } = await supabase
+                    .from('users')
+                    .select('email')
+                    .eq('id', order.user_id)
+                    .single();
+                    
+                  return {
+                    ...order,
+                    users: userData || { email: 'Customer' }
+                  };
+                } catch (err) {
+                  console.error('Error fetching user for order:', err);
+                  return {
+                    ...order,
+                    users: { email: 'Customer' }
+                  };
+                }
+              }
+              return {
+                ...order,
+                users: { email: 'Customer' }
+              };
+            })
+          );
+          
+          setRecentOrders(ordersWithEmail || []);
         }
         
         // Calculate total revenue
