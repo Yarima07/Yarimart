@@ -4,12 +4,18 @@ import { Settings, Package, Users, Layers, ShoppingBag, LogOut } from 'lucide-re
 import { useAuth } from '../../context/AuthContext';
 
 const AdminLayout: React.FC = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
   // Check if user has admin role
   useEffect(() => {
     const checkAdminAccess = async () => {
+      // Wait until authentication is no longer loading
+      if (loading) {
+        console.log('[ADMIN-LAYOUT] Auth is still loading, waiting...');
+        return;
+      }
+      
       // Get admin status from localStorage and context
       const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
       const effectiveIsAdmin = isAdmin || storedAdminStatus;
@@ -34,7 +40,7 @@ const AdminLayout: React.FC = () => {
     };
     
     checkAdminAccess();
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, navigate, loading]);
   
   const handleSignOut = async () => {
     await signOut();
@@ -48,6 +54,18 @@ const AdminLayout: React.FC = () => {
     { name: 'Customers', icon: Users, path: '/admin/customers' },
     { name: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
+
+  // Show a loading state while checking admin status
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900 justify-center items-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 dark:border-primary-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Loading admin panel...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">

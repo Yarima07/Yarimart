@@ -31,10 +31,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    // Initialize from localStorage on component mount
-    return localStorage.getItem('isAdmin') === 'true';
-  });
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   // Helper function to check if an email is in the admin list
@@ -68,7 +65,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     console.log('[AUTH] Provider initialized');
-    console.log(`[AUTH] Initial admin status from localStorage: ${localStorage.getItem('isAdmin')}`);
+    
+    // Check for stored admin status first
+    const storedAdminStatus = localStorage.getItem('isAdmin') === 'true';
+    console.log(`[AUTH] Initial admin status from localStorage: ${storedAdminStatus ? 'true' : 'false'}`);
+    
+    // Set initial admin status from localStorage - this prevents flickering during auth check
+    if (storedAdminStatus) {
+      setIsAdmin(true);
+    }
     
     // Only run auth checks if Supabase is configured
     if (isSupabaseConfigured()) {
@@ -86,11 +91,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log(`[AUTH] User authenticated, checking admin status for: ${userEmail}`);
           console.log(`[AUTH] Admin check result: ${userIsAdmin}`);
           
+          // Persist admin status in state and localStorage
           setIsAdmin(userIsAdmin);
+          localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
         } else {
-          console.log('[AUTH] No active user session');
           // Only clear admin status if we're sure there's no user
-          setIsAdmin(false);
+          console.log('[AUTH] No active user session');
+          
+          // Don't immediately reset isAdmin if there's no session yet - let AdminLayout handle this
+          // This prevents flickering on page load/refresh
         }
         
         setLoading(false);
@@ -109,9 +118,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log(`[AUTH] Admin check result: ${userIsAdmin}`);
           
           setIsAdmin(userIsAdmin);
+          localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
         } else {
           console.log('[AUTH] Auth state changed: No user');
           setIsAdmin(false);
+          localStorage.setItem('isAdmin', 'false');
         }
         
         setLoading(false);
@@ -162,9 +173,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (isAdminUser) {
         localStorage.setItem('isAdmin', 'true');
         console.log('[AUTH] Set admin=true in localStorage before login');
+        // Also set the state immediately for faster UI updates
+        setIsAdmin(true);
       } else {
         localStorage.setItem('isAdmin', 'false');
         console.log('[AUTH] Set admin=false in localStorage before login');
+        setIsAdmin(false);
       }
       
       // Sign in with password
@@ -179,6 +193,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       console.log("[AUTH] Sign in successful:", data.user?.email);
+      
+      // Set user data
+      setUser(data.user);
       
       // Update admin status in state
       setIsAdmin(isAdminUser);
