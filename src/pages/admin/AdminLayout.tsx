@@ -17,10 +17,55 @@ const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
+  
+  // Enhanced notifications with order-specific icons and types
   const [notifications] = useState([
-    { id: 1, message: '5 new orders received', time: '2 min ago', unread: true },
-    { id: 2, message: 'Low stock alert: Safety Helmets', time: '1 hour ago', unread: true },
-    { id: 3, message: 'Monthly report is ready', time: '3 hours ago', unread: false }
+    { 
+      id: 1, 
+      type: 'order',
+      message: 'New order #12345678 received',
+      details: 'Order total: ₹15,999 - Professional Impact Drill',
+      time: '2 min ago', 
+      unread: true,
+      priority: 'high'
+    },
+    { 
+      id: 2, 
+      type: 'order',
+      message: 'Order #12345677 shipped',
+      details: 'Tracking: TRK123456789',
+      time: '15 min ago', 
+      unread: true,
+      priority: 'normal'
+    },
+    { 
+      id: 3, 
+      type: 'order',
+      message: 'Payment pending for order #12345676',
+      details: 'Bank transfer verification required',
+      time: '1 hour ago', 
+      unread: true,
+      priority: 'high'
+    },
+    { 
+      id: 4, 
+      type: 'inventory',
+      message: 'Low stock alert: Safety Helmets',
+      details: 'Only 3 units remaining',
+      time: '2 hours ago', 
+      unread: false,
+      priority: 'normal'
+    },
+    { 
+      id: 5, 
+      type: 'system',
+      message: 'Monthly report is ready',
+      details: 'Revenue and sales analytics available',
+      time: '3 hours ago', 
+      unread: false,
+      priority: 'low'
+    }
   ]);
 
   // Check admin access
@@ -44,6 +89,19 @@ const AdminLayout: React.FC = () => {
     
     checkAdminAccess();
   }, [user, isAdmin, navigate, loading]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.notification-dropdown')) {
+        setNotificationDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -71,6 +129,7 @@ const AdminLayout: React.FC = () => {
       if (e.key === 'Escape') {
         setMobileMenuOpen(false);
         setShowKeyboardShortcuts(false);
+        setNotificationDropdownOpen(false);
       }
     };
 
@@ -94,8 +153,7 @@ const AdminLayout: React.FC = () => {
       name: 'Orders', 
       icon: Package, 
       path: '/admin/orders',
-      description: 'Manage customer orders',
-      badge: '12'
+      description: 'Manage customer orders'
     },
     { 
       name: 'Products', 
@@ -150,6 +208,51 @@ const AdminLayout: React.FC = () => {
     return breadcrumbs;
   };
 
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'order':
+        return <Package className="h-4 w-4 text-blue-500" />;
+      case 'inventory':
+        return <ShoppingBag className="h-4 w-4 text-orange-500" />;
+      case 'system':
+        return <Settings className="h-4 w-4 text-gray-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getNotificationPriorityColor = (priority: string, unread: boolean) => {
+    if (!unread) return 'border-l-gray-300';
+    
+    switch (priority) {
+      case 'high':
+        return 'border-l-red-500 bg-red-50 dark:bg-red-900/10';
+      case 'normal':
+        return 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/10';
+      case 'low':
+        return 'border-l-gray-500 bg-gray-50 dark:bg-gray-900/10';
+      default:
+        return 'border-l-gray-300';
+    }
+  };
+
+  const handleNotificationClick = (notification: any) => {
+    // Mark as read and navigate based on type
+    if (notification.type === 'order') {
+      navigate('/admin/orders');
+    } else if (notification.type === 'inventory') {
+      navigate('/admin/products');
+    }
+    setNotificationDropdownOpen(false);
+  };
+
+  const markAllAsRead = () => {
+    // In a real implementation, this would update the state/database
+    console.log('Marking all notifications as read');
+  };
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900 justify-center items-center">
@@ -168,7 +271,7 @@ const AdminLayout: React.FC = () => {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
           {!sidebarCollapsed && (
-            <Link to="/admin\" className="flex items-center space-x-2">
+            <Link to="/admin" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <Layers className="w-5 h-5 text-white" />
               </div>
@@ -227,11 +330,6 @@ const AdminLayout: React.FC = () => {
                   <div className="ml-3 flex-1">
                     <div className="flex items-center justify-between">
                       <span>{item.name}</span>
-                      {item.badge && (
-                        <span className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs px-2 py-1 rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.description}</p>
                   </div>
@@ -297,11 +395,6 @@ const AdminLayout: React.FC = () => {
                   >
                     <Icon className="mr-3 w-5 h-5" />
                     {item.name}
-                    {item.badge && (
-                      <span className="ml-auto bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
                   </Link>
                 );
               })}
@@ -357,20 +450,110 @@ const AdminLayout: React.FC = () => {
                 />
               </div>
 
-              {/* Notifications */}
-              <div className="relative">
-                <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 relative">
+              {/* Enhanced Notifications */}
+              <div className="relative notification-dropdown">
+                <button 
+                  onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 relative rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title="Notifications"
+                >
                   <Bell className="w-5 h-5" />
-                  {notifications.filter(n => n.unread).length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
                   )}
                 </button>
+
+                {/* Notification Dropdown */}
+                {notificationDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-hidden">
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <span className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs px-2 py-1 rounded-full">
+                            {unreadCount} new
+                          </span>
+                        )}
+                      </div>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Notifications List */}
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            onClick={() => handleNotificationClick(notification)}
+                            className={`px-4 py-3 border-l-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${getNotificationPriorityColor(notification.priority, notification.unread)}`}
+                          >
+                            <div className="flex items-start space-x-3">
+                              {/* Order/Type Icon */}
+                              <div className="flex-shrink-0 mt-1">
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <p className={`text-sm ${notification.unread ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
+                                    {notification.message}
+                                  </p>
+                                  {notification.unread && (
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2"></div>
+                                  )}
+                                </div>
+                                {notification.details && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {notification.details}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                  {notification.time}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <Bell className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No notifications</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    {notifications.length > 0 && (
+                      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+                        <Link
+                          to="/admin/orders"
+                          onClick={() => setNotificationDropdownOpen(false)}
+                          className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                        >
+                          View all orders →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="Toggle dark mode"
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -379,7 +562,7 @@ const AdminLayout: React.FC = () => {
               {/* Help */}
               <button
                 onClick={() => setShowKeyboardShortcuts(true)}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="Keyboard shortcuts (Ctrl+?)"
               >
                 <HelpCircle className="w-5 h-5" />
@@ -397,7 +580,7 @@ const AdminLayout: React.FC = () => {
               {/* Sign Out */}
               <button
                 onClick={handleSignOut}
-                className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 title="Sign out"
               >
                 <LogOut className="w-5 h-5" />
