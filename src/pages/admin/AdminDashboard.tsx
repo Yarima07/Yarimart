@@ -65,20 +65,48 @@ const AdminDashboard: React.FC = () => {
         throw new Error('Supabase is not properly configured');
       }
       
-      // Fetch all data in parallel for better performance
-      const [ordersResult, productsResult, customersResult] = await Promise.all([
+      // Get the current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Authentication required');
+      }
+
+      // Fetch orders and products data in parallel
+      const [ordersResult, productsResult] = await Promise.all([
         supabase.from('orders').select('*'),
-        supabase.from('products').select('*'),
-        supabase.auth.admin.listUsers()
+        supabase.from('products').select('*')
       ]);
 
       if (ordersResult.error) throw ordersResult.error;
       if (productsResult.error) throw productsResult.error;
-      if (customersResult.error) throw customersResult.error;
 
       const orders = ordersResult.data || [];
       const products = productsResult.data || [];
-      const customers = customersResult.data?.users || [];
+
+      // Fetch customers data using the Edge Function
+      let customersCount = 0;
+      try {
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`;
+        const headers = {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        };
+
+        const response = await fetch(apiUrl, { headers });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Edge function error:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch customer data');
+        }
+        
+        const customers = await response.json();
+        customersCount = customers?.length || 0;
+      } catch (fetchError) {
+        console.error('Error fetching customers via Edge Function:', fetchError);
+        // Don't throw here, just log the error and continue with 0 customers
+        customersCount = 0;
+      }
 
       // Calculate stats
       const pendingOrders = orders.filter(order => order.status === 'pending');
@@ -94,7 +122,7 @@ const AdminDashboard: React.FC = () => {
         pendingOrders: pendingOrders.length,
         totalProducts: products.length,
         totalRevenue,
-        totalCustomers: customers.length,
+        totalCustomers: customersCount,
         lowStockProducts: lowStockProducts.length,
         revenueGrowth,
         orderGrowth
@@ -242,6 +270,15 @@ const AdminDashboard: React.FC = () => {
           <h3 className="text-lg font-medium text-red-800 dark:text-red-300">Error Loading Dashboard</h3>
         </div>
         <p className="text-red-700 dark:text-red-400 mt-2">{error}</p>
+        <div className="mt-4 space-y-2">
+          <p className="text-sm text-red-600 dark:text-red-400">
+            If you're seeing authentication errors, please try:
+          </p>
+          <ul className="list-disc list-inside text-sm text-red-600 dark:text-red-400 space-y-1">
+            <li>Running the admin setup script: <code className="bg-red-100 dark:bg-red-800 px-1 py-0.5 rounded">npm run setup-admins</code></li>
+            <li>Logging out and logging back in to refresh your session</li>
+          </ul>
+        </div>
         <button 
           onClick={fetchDashboardData}
           className="mt-4 bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 px-4 py-2 rounded hover:bg-red-200 dark:hover:bg-red-700 transition-colors flex items-center"
