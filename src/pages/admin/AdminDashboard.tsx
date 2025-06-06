@@ -49,7 +49,7 @@ const AdminDashboard: React.FC = () => {
           throw productsError;
         }
         
-        // Fetch recent orders
+        // Fetch recent orders without join
         const { data: recentOrdersData, error: recentError } = await supabase
           .from('orders')
           .select('*')
@@ -60,7 +60,7 @@ const AdminDashboard: React.FC = () => {
           console.error('[ADMIN-DASHBOARD] Error fetching recent orders:', recentError);
           setRecentOrders([]);
         } else {
-          // For each order, try to fetch the user email separately
+          // For each order, fetch user email separately to avoid join issues
           const ordersWithEmails = await Promise.all(
             (recentOrdersData || []).map(async (order) => {
               if (order.user_id) {
@@ -103,7 +103,7 @@ const AdminDashboard: React.FC = () => {
           setRecentOrders(ordersWithEmails);
         }
         
-        // Calculate total revenue - safely handle potential NaN values
+        // Calculate total revenue safely handling potential NaN values
         const totalRevenue = orders?.reduce((sum, order) => {
           // Make sure we have a valid number before adding
           const orderTotal = parseFloat(order.total);
