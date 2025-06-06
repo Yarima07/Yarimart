@@ -138,7 +138,7 @@ const AuthPage: React.FC = () => {
             <div className="mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-red-400\" aria-hidden="true" />
+                  <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
@@ -194,9 +194,9 @@ const AuthPage: React.FC = () => {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5\" aria-hidden="true" />
+                      <EyeOff className="h-5 w-5" aria-hidden="true" />
                     ) : (
-                      <Eye className="h-5 w-5\" aria-hidden="true" />
+                      <Eye className="h-5 w-5" aria-hidden="true" />
                     )}
                   </button>
                 </div>
