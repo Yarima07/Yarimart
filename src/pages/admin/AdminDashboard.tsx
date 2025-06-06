@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { Package, ShoppingBag, Users, DollarSign } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -11,12 +11,19 @@ const AdminDashboard: React.FC = () => {
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setError(null);
       try {
         console.log('[ADMIN-DASHBOARD] Fetching dashboard data');
+        
+        // Check if Supabase is configured before making requests
+        if (!isSupabaseConfigured()) {
+          throw new Error('Supabase is not properly configured. Please check your environment variables.');
+        }
         
         // Fetch order stats
         const { data: orders, error: ordersError } = await supabase
@@ -129,6 +136,8 @@ const AdminDashboard: React.FC = () => {
         });
       } catch (error) {
         console.error('[ADMIN-DASHBOARD] Error fetching dashboard data:', error);
+        // Set error message for display
+        setError(error instanceof Error ? error.message : 'Failed to fetch dashboard data');
         // Set default values in case of error
         setStats({
           totalOrders: 0,
@@ -168,6 +177,24 @@ const AdminDashboard: React.FC = () => {
           ))}
         </div>
         <div className="bg-gray-200 dark:bg-gray-700 h-96 rounded-lg"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+        <h3 className="text-lg font-medium text-red-800 dark:text-red-300 mb-2">Error Loading Dashboard</h3>
+        <p className="text-red-700 dark:text-red-400">{error}</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          Please check your Supabase configuration in the .env file and ensure your database is accessible.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 px-4 py-2 rounded hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }

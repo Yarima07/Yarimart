@@ -5,13 +5,18 @@ const getEnvVariable = (key: string, defaultValue: string): string => {
   return import.meta.env[key] || defaultValue;
 };
 
-// Default values for development to prevent crashes
-const supabaseUrl = getEnvVariable('VITE_SUPABASE_URL', 'https://example.supabase.co');
-const supabaseAnonKey = getEnvVariable('VITE_SUPABASE_ANON_KEY', 'example-key');
+// Get Supabase credentials from environment variables
+const supabaseUrl = getEnvVariable('VITE_SUPABASE_URL', '');
+const supabaseAnonKey = getEnvVariable('VITE_SUPABASE_ANON_KEY', '');
 
-// Log the configuration for debugging
-console.log(`Supabase URL: ${supabaseUrl}`);
-console.log(`Supabase Anon Key provided: ${supabaseAnonKey !== 'example-key'}`);
+// Validate configuration
+if (!supabaseUrl || supabaseUrl === 'https://example.supabase.co') {
+  console.error('Invalid or missing VITE_SUPABASE_URL. Please check your .env file.');
+}
+
+if (!supabaseAnonKey || supabaseAnonKey === 'example-key') {
+  console.error('Invalid or missing VITE_SUPABASE_ANON_KEY. Please check your .env file.');
+}
 
 // Create the Supabase client with explicit auth configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -25,23 +30,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Helper function to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  const url = getEnvVariable('VITE_SUPABASE_URL', 'https://example.supabase.co');
-  const key = getEnvVariable('VITE_SUPABASE_ANON_KEY', 'example-key');
-  
   const isConfigured = (
-    url !== undefined &&
-    url !== 'https://example.supabase.co' &&
-    key !== undefined &&
-    key !== 'example-key'
+    supabaseUrl !== '' && 
+    supabaseUrl !== 'https://example.supabase.co' &&
+    supabaseAnonKey !== '' &&
+    supabaseAnonKey !== 'example-key'
   );
   
-  if (isConfigured) {
-    console.log('Supabase is properly configured');
+  if (!isConfigured) {
+    console.error('Supabase is NOT properly configured. Authentication and data operations will not work!');
+    console.error(`Check that your .env file contains valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values.`);
   } else {
-    console.warn('Supabase is NOT properly configured. Authentication will not work!');
-    console.warn(`URL check: ${url !== 'https://example.supabase.co'}`);
-    console.warn(`Key check: ${key !== 'example-key'}`);
+    console.log('Supabase is properly configured');
   }
   
   return isConfigured;
 };
+
+// Call isSupabaseConfigured immediately to detect issues early
+isSupabaseConfigured();
