@@ -2,14 +2,6 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-// List of admin emails
-const ADMIN_EMAILS = [
-  'pamacomkb@gmail.com',
-  'yarimaind@gmail.com', 
-  'pamacospares@gmail.com', 
-  'fortunemillstores@gmail.com'
-];
-
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
@@ -34,19 +26,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(localStorage.getItem('isAdmin') === 'true');
   const [loading, setLoading] = useState(true);
 
-  // Helper function to check if an email is in the admin list
-  const checkIsAdminEmail = (email: string): boolean => {
-    if (!email) return false;
+  // Helper function to check if user has admin role in app_metadata
+  const checkIsAdmin = (user: User | null): boolean => {
+    if (!user) return false;
     
-    const normalizedEmail = email.toLowerCase().trim();
-    for (const adminEmail of ADMIN_EMAILS) {
-      if (adminEmail.toLowerCase().trim() === normalizedEmail) {
-        console.log(`[AUTH] Email ${normalizedEmail} is recognized as admin`);
-        return true;
-      }
-    }
-    console.log(`[AUTH] Email ${normalizedEmail} is NOT an admin`);
-    return false;
+    const appMetadata = user.app_metadata as { role?: string } || {};
+    const userIsAdmin = appMetadata.role === 'admin';
+    
+    console.log(`[AUTH] Checking admin status for user: ${user.email}`);
+    console.log(`[AUTH] app_metadata.role: ${appMetadata.role}`);
+    console.log(`[AUTH] Is admin: ${userIsAdmin}`);
+    
+    return userIsAdmin;
   };
 
   // Update localStorage whenever isAdmin changes
@@ -84,22 +75,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('[AUTH] Session retrieved:', session ? 'yes' : 'no');
         setUser(session?.user ?? null);
         
-        // Check if user is an admin
+        // Check if user is an admin based on app_metadata
         if (session?.user) {
-          const userEmail = session.user.email || '';
-          const userIsAdmin = checkIsAdminEmail(userEmail);
-          console.log(`[AUTH] User authenticated, checking admin status for: ${userEmail}`);
-          console.log(`[AUTH] Admin check result: ${userIsAdmin}`);
+          const userIsAdmin = checkIsAdmin(session.user);
+          console.log(`[AUTH] User authenticated, admin status: ${userIsAdmin}`);
           
           // Persist admin status in state and localStorage
           setIsAdmin(userIsAdmin);
           localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
         } else {
-          // Only clear admin status if we're sure there's no user
+          // No active user session
           console.log('[AUTH] No active user session');
-          
-          // Don't immediately reset isAdmin if there's no session yet - let AdminLayout handle this
-          // This prevents flickering on page load/refresh
         }
         
         setLoading(false);
@@ -110,12 +96,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log(`[AUTH] Auth state changed: ${event}`);
         setUser(session?.user ?? null);
         
-        // Check if user is an admin
+        // Check if user is an admin based on app_metadata
         if (session?.user) {
-          const userEmail = session.user.email || '';
-          const userIsAdmin = checkIsAdminEmail(userEmail);
-          console.log(`[AUTH] Auth state changed, checking admin for: ${userEmail}`);
-          console.log(`[AUTH] Admin check result: ${userIsAdmin}`);
+          const userIsAdmin = checkIsAdmin(session.user);
+          console.log(`[AUTH] Auth state changed, admin status: ${userIsAdmin}`);
           
           setIsAdmin(userIsAdmin);
           localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
@@ -142,12 +126,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error('Authentication service is not available');
     }
     
-    // Check if trying to register with an admin email - prevent this
-    if (checkIsAdminEmail(email)) {
-      console.error('[AUTH] Attempted to register with admin email');
-      throw new Error('This email address cannot be used for regular user registration');
-    }
-    
     console.log(`[AUTH] Attempting to sign up: ${email}`);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -171,22 +149,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log(`[AUTH] Attempting to sign in: ${email}`);
     
     try {
-      // First check if this is an admin email
-      const isAdminUser = checkIsAdminEmail(email);
-      console.log(`[AUTH] Is admin email check result: ${isAdminUser}`);
-      
-      // Set the admin status in localStorage immediately to ensure persistence
-      if (isAdminUser) {
-        localStorage.setItem('isAdmin', 'true');
-        console.log('[AUTH] Set admin=true in localStorage before login');
-        // Also set the state immediately for faster UI updates
-        setIsAdmin(true);
-      } else {
-        localStorage.setItem('isAdmin', 'false');
-        console.log('[AUTH] Set admin=false in localStorage before login');
-        setIsAdmin(false);
-      }
-      
       // Sign in with password
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -203,9 +165,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Set user data
       setUser(data.user);
       
-      // Update admin status in state
-      setIsAdmin(isAdminUser);
-      console.log(`[AUTH] Set isAdmin state to: ${isAdminUser}`);
+      // Check admin status from app_metadata
+      const userIsAdmin = checkIsAdmin(data.user);
+      setIsAdmin(userIsAdmin);
+      localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
+      console.log(`[AUTH] Set isAdmin state to: ${userIsAdmin}`);
       
       return;
     } catch (err) {
