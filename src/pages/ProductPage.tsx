@@ -8,6 +8,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useRegion } from '../context/RegionContext';
 import { Product } from '../types/product';
 
 const ProductPage: React.FC = () => {
@@ -16,6 +17,7 @@ const ProductPage: React.FC = () => {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { formatPrice } = useRegion();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -249,14 +251,20 @@ const ProductPage: React.FC = () => {
           <div className="mt-4">
             {product.discount > 0 ? (
               <div className="flex items-center">
-                <span className="text-2xl font-bold text-accent-600 dark:text-accent-400">{"$" + finalPrice.toFixed(2)}</span>
-                <span className="ml-2 text-gray-500 dark:text-gray-400 line-through">{"$" + product.price.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-accent-600 dark:text-accent-400">
+                  {formatPrice(finalPrice)}
+                </span>
+                <span className="ml-2 text-gray-500 dark:text-gray-400 line-through">
+                  {formatPrice(product.price)}
+                </span>
                 <span className="ml-2 bg-accent-100 dark:bg-accent-800 text-accent-800 dark:text-accent-100 text-xs font-medium px-2 py-1 rounded">
                   {product.discount}% OFF
                 </span>
               </div>
             ) : (
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">{"$" + product.price.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {formatPrice(product.price)}
+              </span>
             )}
           </div>
 
@@ -339,7 +347,7 @@ const ProductPage: React.FC = () => {
           <div className="mt-10 pt-10 border-t border-gray-200 dark:border-gray-700">
             <div className="mt-4 space-y-6">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium dark:text-gray-300">Free shipping</span> on orders over $50
+                <span className="font-medium dark:text-gray-300">Free shipping</span> on orders over ₹5,000
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 <span className="font-medium dark:text-gray-300">Easy returns</span> within 30 days
