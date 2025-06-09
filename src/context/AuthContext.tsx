@@ -84,8 +84,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsAdmin(userIsAdmin);
           localStorage.setItem('isAdmin', userIsAdmin ? 'true' : 'false');
         } else {
-          // No active user session
-          console.log('[AUTH] No active user session');
+          // No active user session - clear any stale session data
+          console.log('[AUTH] No active user session, clearing stale data');
+          supabase.auth.signOut();
+          setIsAdmin(false);
+          localStorage.setItem('isAdmin', 'false');
         }
         
         setLoading(false);
