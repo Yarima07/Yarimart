@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getCategories } from '../../utils/productUtils';
 import { 
@@ -340,17 +340,17 @@ const AdminProducts: React.FC = () => {
     }).format(amount);
   };
 
-  // Fixed Input Component with stable keys and no layout shifts
-  const StableInput = React.memo(({ 
+  // Stable Input Component with better focus management
+  const FormInput = React.memo(({ 
     label, 
     icon: Icon, 
     error, 
     helpText, 
     required = false,
     type = 'text',
-    fieldKey,
     value,
     onChange,
+    placeholder,
     ...props 
   }: {
     label: string;
@@ -359,60 +359,66 @@ const AdminProducts: React.FC = () => {
     helpText?: string;
     required?: boolean;
     type?: string;
-    fieldKey: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string;
     [key: string]: any;
-  }) => (
-    <div className="space-y-1" key={fieldKey}>
-      <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-        {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <div className="relative">
-        <input
-          key={fieldKey}
-          type={type}
-          value={value}
-          onChange={onChange}
-          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
-            error 
-              ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
-              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-          }`}
-          {...props}
-        />
+  }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const id = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+          {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
+          <span>{label}</span>
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </div>
+        <div className="relative">
+          <input
+            ref={inputRef}
+            id={id}
+            type={type}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
+              error 
+                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            }`}
+            {...props}
+          />
+        </div>
+        <div className="min-h-[1.25rem]">
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+              {error}
+            </p>
+          )}
+          {helpText && !error && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+              <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+              {helpText}
+            </p>
+          )}
+        </div>
       </div>
-      {/* Fixed height container to prevent layout shifts */}
-      <div className="min-h-[1.25rem]">
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-            {error}
-          </p>
-        )}
-        {helpText && !error && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
-            {helpText}
-          </p>
-        )}
-      </div>
-    </div>
-  ));
+    );
+  });
 
-  // Fixed Textarea Component with stable keys
-  const StableTextarea = React.memo(({ 
+  // Stable Textarea Component
+  const FormTextarea = React.memo(({ 
     label, 
     icon: Icon, 
     error, 
     helpText, 
     required = false,
     rows = 3,
-    fieldKey,
     value,
     onChange,
+    placeholder,
     ...props 
   }: {
     label: string;
@@ -421,57 +427,62 @@ const AdminProducts: React.FC = () => {
     helpText?: string;
     required?: boolean;
     rows?: number;
-    fieldKey: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    placeholder?: string;
     [key: string]: any;
-  }) => (
-    <div className="space-y-1" key={fieldKey}>
-      <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-        {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <div className="relative">
-        <textarea
-          key={fieldKey}
-          rows={rows}
-          value={value}
-          onChange={onChange}
-          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
-            error 
-              ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
-              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-          }`}
-          {...props}
-        />
+  }) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const id = `textarea-${label.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+          {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
+          <span>{label}</span>
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </div>
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            id={id}
+            rows={rows}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
+              error 
+                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            }`}
+            {...props}
+          />
+        </div>
+        <div className="min-h-[1.25rem]">
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+              {error}
+            </p>
+          )}
+          {helpText && !error && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+              <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+              {helpText}
+            </p>
+          )}
+        </div>
       </div>
-      {/* Fixed height container to prevent layout shifts */}
-      <div className="min-h-[1.25rem]">
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-            {error}
-          </p>
-        )}
-        {helpText && !error && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
-            {helpText}
-          </p>
-        )}
-      </div>
-    </div>
-  ));
+    );
+  });
 
-  // Fixed Select Component with stable keys
-  const StableSelect = React.memo(({ 
+  // Stable Select Component
+  const FormSelect = React.memo(({ 
     label, 
     icon: Icon, 
     error, 
     helpText, 
     required = false,
-    fieldKey,
     value,
     onChange,
     children,
@@ -482,50 +493,54 @@ const AdminProducts: React.FC = () => {
     error?: string;
     helpText?: string;
     required?: boolean;
-    fieldKey: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     children: React.ReactNode;
     [key: string]: any;
-  }) => (
-    <div className="space-y-1" key={fieldKey}>
-      <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-        {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <div className="relative">
-        <select
-          key={fieldKey}
-          value={value}
-          onChange={onChange}
-          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
-            error 
-              ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
-              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-          }`}
-          {...props}
-        >
-          {children}
-        </select>
+  }) => {
+    const selectRef = useRef<HTMLSelectElement>(null);
+    const id = `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+          {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
+          <span>{label}</span>
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </div>
+        <div className="relative">
+          <select
+            ref={selectRef}
+            id={id}
+            value={value}
+            onChange={onChange}
+            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
+              error 
+                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            }`}
+            {...props}
+          >
+            {children}
+          </select>
+        </div>
+        <div className="min-h-[1.25rem]">
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+              {error}
+            </p>
+          )}
+          {helpText && !error && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+              <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+              {helpText}
+            </p>
+          )}
+        </div>
       </div>
-      {/* Fixed height container to prevent layout shifts */}
-      <div className="min-h-[1.25rem]">
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-            {error}
-          </p>
-        )}
-        {helpText && !error && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
-            {helpText}
-          </p>
-        )}
-      </div>
-    </div>
-  ));
+    );
+  });
 
   return (
     <div>
@@ -755,8 +770,7 @@ const AdminProducts: React.FC = () => {
                       
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
-                          <StableInput
-                            fieldKey="name"
+                          <FormInput
                             label="Product Name"
                             icon={Tag}
                             required
@@ -768,37 +782,34 @@ const AdminProducts: React.FC = () => {
                           />
                         </div>
 
-                        <StableInput
-                          fieldKey="price"
+                        <FormInput
                           label="Price"
                           icon={DollarSign}
                           type="number"
-                          step="0.01"
-                          min="0"
                           required
                           value={formData.price}
                           onChange={handleInputChange('price')}
                           placeholder="0.00"
                           error={formErrors.price}
                           helpText="Price in Indian Rupees (₹)"
+                          step="0.01"
+                          min="0"
                         />
                         
-                        <StableInput
-                          fieldKey="discount"
+                        <FormInput
                           label="Discount Percentage"
                           icon={Tag}
                           type="number"
-                          min="0"
-                          max="100"
                           value={formData.discount}
                           onChange={handleInputChange('discount')}
                           placeholder="0"
                           error={formErrors.discount}
                           helpText="Optional discount (0-100%)"
+                          min="0"
+                          max="100"
                         />
 
-                        <StableSelect
-                          fieldKey="category"
+                        <FormSelect
                           label="Category"
                           icon={Box}
                           required
@@ -811,10 +822,9 @@ const AdminProducts: React.FC = () => {
                           {categories.map(category => (
                             <option key={category} value={category}>{category}</option>
                           ))}
-                        </StableSelect>
+                        </FormSelect>
 
-                        <StableInput
-                          fieldKey="subcategory"
+                        <FormInput
                           label="Subcategory"
                           icon={Hash}
                           value={formData.subcategory}
@@ -823,18 +833,17 @@ const AdminProducts: React.FC = () => {
                           helpText="Optional subcategory for better organization"
                         />
 
-                        <StableInput
-                          fieldKey="stock"
+                        <FormInput
                           label="Stock Quantity"
                           icon={Package}
                           type="number"
-                          min="0"
                           required
                           value={formData.stock}
                           onChange={handleInputChange('stock')}
                           placeholder="0"
                           error={formErrors.stock}
                           helpText="Available quantity in inventory"
+                          min="0"
                         />
                       </div>
                     </div>
@@ -848,8 +857,7 @@ const AdminProducts: React.FC = () => {
                       
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
-                          <StableTextarea
-                            fieldKey="description"
+                          <FormTextarea
                             label="Description"
                             icon={Info}
                             required
@@ -862,8 +870,7 @@ const AdminProducts: React.FC = () => {
                           />
                         </div>
 
-                        <StableInput
-                          fieldKey="tags"
+                        <FormInput
                           label="Tags"
                           icon={Tag}
                           value={formData.tags}
@@ -873,8 +880,7 @@ const AdminProducts: React.FC = () => {
                         />
 
                         <div className="lg:col-span-1">
-                          <StableTextarea
-                            fieldKey="images"
+                          <FormTextarea
                             label="Image URLs"
                             icon={Image}
                             required
@@ -887,8 +893,7 @@ const AdminProducts: React.FC = () => {
                           />
                         </div>
 
-                        <StableInput
-                          fieldKey="colors"
+                        <FormInput
                           label="Available Colors"
                           icon={Palette}
                           value={formData.colors}
@@ -897,8 +902,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Separate colors with commas (optional)"
                         />
                         
-                        <StableInput
-                          fieldKey="sizes"
+                        <FormInput
                           label="Available Sizes"
                           icon={Ruler}
                           value={formData.sizes}
@@ -917,8 +921,7 @@ const AdminProducts: React.FC = () => {
                       </h4>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <StableInput
-                          fieldKey="spec-power"
+                        <FormInput
                           label="Power"
                           icon={Zap}
                           value={formData.specifications.power}
@@ -927,8 +930,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Power consumption or output"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-voltage"
+                        <FormInput
                           label="Voltage"
                           icon={Zap}
                           value={formData.specifications.voltage}
@@ -937,8 +939,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Operating voltage"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-weight"
+                        <FormInput
                           label="Weight"
                           icon={Package}
                           value={formData.specifications.weight}
@@ -947,8 +948,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Product weight with packaging"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-dimensions"
+                        <FormInput
                           label="Dimensions"
                           icon={Ruler}
                           value={formData.specifications.dimensions}
@@ -957,8 +957,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Length x Width x Height"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-warranty"
+                        <FormInput
                           label="Warranty"
                           icon={CheckCircle}
                           value={formData.specifications.warranty}
@@ -967,8 +966,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Warranty period"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-manufacturer"
+                        <FormInput
                           label="Manufacturer"
                           icon={User}
                           value={formData.specifications.manufacturer}
@@ -977,8 +975,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Brand or manufacturer name"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-country"
+                        <FormInput
                           label="Country of Origin"
                           icon={MapPin}
                           value={formData.specifications.countryOfOrigin}
@@ -987,8 +984,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Manufacturing country"
                         />
                         
-                        <StableInput
-                          fieldKey="spec-material"
+                        <FormInput
                           label="Material"
                           icon={Box}
                           value={formData.specifications.material}
