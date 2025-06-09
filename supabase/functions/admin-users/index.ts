@@ -28,20 +28,41 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client with the service role key
+    // Get environment variables (these are pre-populated in Supabase environments)
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing environment variables:', { supabaseUrl: !!supabaseUrl, supabaseServiceKey: !!supabaseServiceKey });
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Extract the token from the Authorization header
+    const token = authHeader.replace('Bearer ', '');
     
-    // Verify the user is authenticated and has admin role
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    // Create a client with the anon key for user authentication verification
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+    
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
     
     if (authError || !user) {
+      console.error('Authentication error:', authError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
         {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -52,6 +73,7 @@ Deno.serve(async (req) => {
     // Check if user has admin role
     const appMetadata = user.app_metadata as { role?: string } || {};
     if (appMetadata.role !== 'admin') {
+      console.error('User is not admin:', { userId: user.id, role: appMetadata.role });
       return new Response(
         JSON.stringify({ error: 'Forbidden: Admin role required' }),
         {
@@ -61,24 +83,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get all users
+    // Create admin client for privileged operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get all users using the admin client
     const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (usersError) {
+      console.error('Error listing users:', usersError);
       throw usersError;
     }
 
     // For each user, get their orders to calculate order count and total spent
     const usersWithOrderData = await Promise.all(
       users.users.map(async (user) => {
-        // Get order count and total spent
+        // Get order count and total spent using admin client
         const { data: orders, error: ordersError } = await supabaseAdmin
           .from('orders')
           .select('total')
           .eq('user_id', user.id);
         
         if (ordersError) {
-          console.error('Error fetching orders for user:', ordersError);
+          console.error('Error fetching orders for user:', user.id, ordersError);
           return {
             ...user,
             order_count: 0,
@@ -87,7 +113,7 @@ Deno.serve(async (req) => {
         }
         
         const orderCount = orders?.length || 0;
-        const totalSpent = orders?.reduce((sum, order) => sum + parseFloat(order.total), 0) || 0;
+        const totalSpent = orders?.reduce((sum, order) => sum + parseFloat(order.total || '0'), 0) || 0;
         
         return {
           ...user,
@@ -105,7 +131,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Edge function error:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'An error occurred' }),
       {
