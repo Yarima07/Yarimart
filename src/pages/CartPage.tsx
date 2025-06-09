@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRegion } from '../context/RegionContext';
@@ -39,6 +39,41 @@ const CartPage: React.FC = () => {
     } else {
       navigate('/checkout');
     }
+  };
+
+  const generateWhatsAppMessage = () => {
+    let message = "Hello! I'd like to place an order from Yarimart:\n\n";
+    
+    cart.forEach((item, index) => {
+      const finalPrice = item.discount > 0 
+        ? item.price * (1 - item.discount / 100) 
+        : item.price;
+      message += `${index + 1}. ${item.name}\n`;
+      message += `   Quantity: ${item.quantity}\n`;
+      message += `   Price: ${formatPrice(finalPrice)} each\n`;
+      if (item.selectedSize) {
+        message += `   Size: ${item.selectedSize}\n`;
+      }
+      if (item.selectedColor) {
+        message += `   Color: ${item.selectedColor}\n`;
+      }
+      message += `   Subtotal: ${formatPrice(finalPrice * item.quantity)}\n\n`;
+    });
+    
+    message += `Order Summary:\n`;
+    message += `Subtotal: ${formatPrice(subtotal)}\n`;
+    message += `Shipping: ${shipping === 0 ? 'Free' : formatPrice(shipping)}\n`;
+    message += `Tax (18% GST): ${formatPrice(tax)}\n`;
+    message += `Total: ${formatPrice(total)}\n\n`;
+    message += `Please confirm this order and provide delivery details. Thank you!`;
+    
+    return encodeURIComponent(message);
+  };
+
+  const handleWhatsAppOrder = () => {
+    const message = generateWhatsAppMessage();
+    const whatsappUrl = `https://wa.me/917594888505?text=${message}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -183,13 +218,26 @@ const CartPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-8">
+              <div className="mt-8 space-y-3">
                 <button 
                   onClick={handleCheckout}
                   className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-md font-medium dark:bg-primary-700 dark:hover:bg-primary-600 transition"
                 >
                   {t('cart.checkout')}
                 </button>
+                
+                {/* WhatsApp Order Button */}
+                <button
+                  onClick={handleWhatsAppOrder}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-medium transition flex items-center justify-center"
+                >
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  Order via WhatsApp
+                </button>
+                
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  Need help? Contact us directly on WhatsApp for instant support
+                </p>
               </div>
 
               <div className="mt-6">
