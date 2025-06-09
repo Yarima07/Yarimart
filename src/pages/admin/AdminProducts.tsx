@@ -308,8 +308,8 @@ const AdminProducts: React.FC = () => {
     }).format(amount);
   };
 
-  // Enhanced Input Component
-  const EnhancedInput = ({ 
+  // Fixed Input Component - prevents layout shifts
+  const StableInput = ({ 
     label, 
     icon: Icon, 
     error, 
@@ -326,7 +326,7 @@ const AdminProducts: React.FC = () => {
     type?: string;
     [key: string]: any;
   }) => (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
         {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
         {label}
@@ -335,36 +335,34 @@ const AdminProducts: React.FC = () => {
       <div className="relative">
         <input
           type={type}
-          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
+          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
             error 
               ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
               : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
           }`}
           {...props}
         />
+      </div>
+      {/* Fixed height container to prevent layout shifts */}
+      <div className="min-h-[1.25rem]">
         {error && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-          </div>
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {helpText && !error && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+            {helpText}
+          </p>
         )}
       </div>
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          {error}
-        </p>
-      )}
-      {helpText && !error && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-          <Info className="h-4 w-4 mr-1" />
-          {helpText}
-        </p>
-      )}
     </div>
   );
 
-  // Enhanced Textarea Component
-  const EnhancedTextarea = ({ 
+  // Fixed Textarea Component - prevents layout shifts
+  const StableTextarea = ({ 
     label, 
     icon: Icon, 
     error, 
@@ -381,7 +379,7 @@ const AdminProducts: React.FC = () => {
     rows?: number;
     [key: string]: any;
   }) => (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
         {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
         {label}
@@ -390,36 +388,34 @@ const AdminProducts: React.FC = () => {
       <div className="relative">
         <textarea
           rows={rows}
-          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
+          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
             error 
               ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
               : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
           }`}
           {...props}
         />
+      </div>
+      {/* Fixed height container to prevent layout shifts */}
+      <div className="min-h-[1.25rem]">
         {error && (
-          <div className="absolute top-3 right-3 pointer-events-none">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-          </div>
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {helpText && !error && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+            {helpText}
+          </p>
         )}
       </div>
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          {error}
-        </p>
-      )}
-      {helpText && !error && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-          <Info className="h-4 w-4 mr-1" />
-          {helpText}
-        </p>
-      )}
     </div>
   );
 
-  // Enhanced Select Component
-  const EnhancedSelect = ({ 
+  // Fixed Select Component - prevents layout shifts
+  const StableSelect = ({ 
     label, 
     icon: Icon, 
     error, 
@@ -436,7 +432,7 @@ const AdminProducts: React.FC = () => {
     children: React.ReactNode;
     [key: string]: any;
   }) => (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
         {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
         {label}
@@ -444,7 +440,7 @@ const AdminProducts: React.FC = () => {
       </label>
       <div className="relative">
         <select
-          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
+          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
             error 
               ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
               : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
@@ -453,24 +449,22 @@ const AdminProducts: React.FC = () => {
         >
           {children}
         </select>
+      </div>
+      {/* Fixed height container to prevent layout shifts */}
+      <div className="min-h-[1.25rem]">
         {error && (
-          <div className="absolute inset-y-0 right-8 pr-3 flex items-center pointer-events-none">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-          </div>
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {helpText && !error && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+            {helpText}
+          </p>
         )}
       </div>
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          {error}
-        </p>
-      )}
-      {helpText && !error && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-          <Info className="h-4 w-4 mr-1" />
-          {helpText}
-        </p>
-      )}
     </div>
   );
 
@@ -702,7 +696,7 @@ const AdminProducts: React.FC = () => {
                       
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
-                          <EnhancedInput
+                          <StableInput
                             label="Product Name"
                             icon={Tag}
                             required
@@ -714,7 +708,7 @@ const AdminProducts: React.FC = () => {
                           />
                         </div>
 
-                        <EnhancedInput
+                        <StableInput
                           label="Price"
                           icon={DollarSign}
                           type="number"
@@ -728,7 +722,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Price in Indian Rupees (₹)"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Discount Percentage"
                           icon={Tag}
                           type="number"
@@ -741,7 +735,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Optional discount (0-100%)"
                         />
 
-                        <EnhancedSelect
+                        <StableSelect
                           label="Category"
                           icon={Box}
                           required
@@ -754,9 +748,9 @@ const AdminProducts: React.FC = () => {
                           {categories.map(category => (
                             <option key={category} value={category}>{category}</option>
                           ))}
-                        </EnhancedSelect>
+                        </StableSelect>
 
-                        <EnhancedInput
+                        <StableInput
                           label="Subcategory"
                           icon={Hash}
                           value={formData.subcategory}
@@ -765,7 +759,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Optional subcategory for better organization"
                         />
 
-                        <EnhancedInput
+                        <StableInput
                           label="Stock Quantity"
                           icon={Package}
                           type="number"
@@ -789,7 +783,7 @@ const AdminProducts: React.FC = () => {
                       
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
-                          <EnhancedTextarea
+                          <StableTextarea
                             label="Description"
                             icon={Info}
                             required
@@ -802,7 +796,7 @@ const AdminProducts: React.FC = () => {
                           />
                         </div>
 
-                        <EnhancedInput
+                        <StableInput
                           label="Tags"
                           icon={Tag}
                           value={formData.tags}
@@ -812,7 +806,7 @@ const AdminProducts: React.FC = () => {
                         />
 
                         <div className="lg:col-span-1">
-                          <EnhancedTextarea
+                          <StableTextarea
                             label="Image URLs"
                             icon={Image}
                             required
@@ -825,7 +819,7 @@ const AdminProducts: React.FC = () => {
                           />
                         </div>
 
-                        <EnhancedInput
+                        <StableInput
                           label="Available Colors"
                           icon={Palette}
                           value={formData.colors}
@@ -834,7 +828,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Separate colors with commas (optional)"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Available Sizes"
                           icon={Ruler}
                           value={formData.sizes}
@@ -853,7 +847,7 @@ const AdminProducts: React.FC = () => {
                       </h4>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <EnhancedInput
+                        <StableInput
                           label="Power"
                           icon={Zap}
                           value={formData.specifications.power}
@@ -865,7 +859,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Power consumption or output"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Voltage"
                           icon={Zap}
                           value={formData.specifications.voltage}
@@ -877,7 +871,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Operating voltage"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Weight"
                           icon={Package}
                           value={formData.specifications.weight}
@@ -889,7 +883,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Product weight with packaging"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Dimensions"
                           icon={Ruler}
                           value={formData.specifications.dimensions}
@@ -901,7 +895,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Length x Width x Height"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Warranty"
                           icon={CheckCircle}
                           value={formData.specifications.warranty}
@@ -913,7 +907,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Warranty period"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Manufacturer"
                           icon={User}
                           value={formData.specifications.manufacturer}
@@ -925,7 +919,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Brand or manufacturer name"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Country of Origin"
                           icon={MapPin}
                           value={formData.specifications.countryOfOrigin}
@@ -937,7 +931,7 @@ const AdminProducts: React.FC = () => {
                           helpText="Manufacturing country"
                         />
                         
-                        <EnhancedInput
+                        <StableInput
                           label="Material"
                           icon={Box}
                           value={formData.specifications.material}
