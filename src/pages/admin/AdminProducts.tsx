@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getCategories } from '../../utils/productUtils';
 import { 
@@ -126,7 +126,8 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const validateForm = () => {
+  // Memoized validation function to prevent unnecessary re-runs
+  const validateForm = useCallback(() => {
     const errors: FormErrors = {};
 
     if (!formData.name.trim()) errors.name = 'Product name is required';
@@ -144,7 +145,7 @@ const AdminProducts: React.FC = () => {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }, [formData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -295,11 +296,42 @@ const AdminProducts: React.FC = () => {
     setFormErrors({});
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Optimized change handlers with useCallback to prevent re-renders
+  const handleInputChange = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error for this field when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [formErrors]);
+
+  const handleSpecificationChange = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      specifications: {
+        ...prev.specifications,
+        [field]: value
+      }
+    }));
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(product =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -308,14 +340,17 @@ const AdminProducts: React.FC = () => {
     }).format(amount);
   };
 
-  // Fixed Input Component - prevents layout shifts
-  const StableInput = ({ 
+  // Fixed Input Component with stable keys and no layout shifts
+  const StableInput = React.memo(({ 
     label, 
     icon: Icon, 
     error, 
     helpText, 
     required = false,
     type = 'text',
+    fieldKey,
+    value,
+    onChange,
     ...props 
   }: {
     label: string;
@@ -324,9 +359,12 @@ const AdminProducts: React.FC = () => {
     helpText?: string;
     required?: boolean;
     type?: string;
+    fieldKey: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     [key: string]: any;
   }) => (
-    <div className="space-y-1">
+    <div className="space-y-1" key={fieldKey}>
       <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
         {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
         {label}
@@ -334,7 +372,10 @@ const AdminProducts: React.FC = () => {
       </label>
       <div className="relative">
         <input
+          key={fieldKey}
           type={type}
+          value={value}
+          onChange={onChange}
           className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
             error 
               ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
@@ -359,16 +400,19 @@ const AdminProducts: React.FC = () => {
         )}
       </div>
     </div>
-  );
+  ));
 
-  // Fixed Textarea Component - prevents layout shifts
-  const StableTextarea = ({ 
+  // Fixed Textarea Component with stable keys
+  const StableTextarea = React.memo(({ 
     label, 
     icon: Icon, 
     error, 
     helpText, 
     required = false,
     rows = 3,
+    fieldKey,
+    value,
+    onChange,
     ...props 
   }: {
     label: string;
@@ -377,9 +421,12 @@ const AdminProducts: React.FC = () => {
     helpText?: string;
     required?: boolean;
     rows?: number;
+    fieldKey: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     [key: string]: any;
   }) => (
-    <div className="space-y-1">
+    <div className="space-y-1" key={fieldKey}>
       <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
         {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
         {label}
@@ -387,7 +434,10 @@ const AdminProducts: React.FC = () => {
       </label>
       <div className="relative">
         <textarea
+          key={fieldKey}
           rows={rows}
+          value={value}
+          onChange={onChange}
           className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
             error 
               ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
@@ -412,15 +462,18 @@ const AdminProducts: React.FC = () => {
         )}
       </div>
     </div>
-  );
+  ));
 
-  // Fixed Select Component - prevents layout shifts
-  const StableSelect = ({ 
+  // Fixed Select Component with stable keys
+  const StableSelect = React.memo(({ 
     label, 
     icon: Icon, 
     error, 
     helpText, 
     required = false,
+    fieldKey,
+    value,
+    onChange,
     children,
     ...props 
   }: {
@@ -429,10 +482,13 @@ const AdminProducts: React.FC = () => {
     error?: string;
     helpText?: string;
     required?: boolean;
+    fieldKey: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     children: React.ReactNode;
     [key: string]: any;
   }) => (
-    <div className="space-y-1">
+    <div className="space-y-1" key={fieldKey}>
       <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
         {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
         {label}
@@ -440,6 +496,9 @@ const AdminProducts: React.FC = () => {
       </label>
       <div className="relative">
         <select
+          key={fieldKey}
+          value={value}
+          onChange={onChange}
           className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
             error 
               ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
@@ -466,7 +525,7 @@ const AdminProducts: React.FC = () => {
         )}
       </div>
     </div>
-  );
+  ));
 
   return (
     <div>
@@ -697,11 +756,12 @@ const AdminProducts: React.FC = () => {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
                           <StableInput
+                            fieldKey="name"
                             label="Product Name"
                             icon={Tag}
                             required
                             value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            onChange={handleInputChange('name')}
                             placeholder="Enter a descriptive product name"
                             error={formErrors.name}
                             helpText="Use a clear, searchable name that customers will recognize"
@@ -709,6 +769,7 @@ const AdminProducts: React.FC = () => {
                         </div>
 
                         <StableInput
+                          fieldKey="price"
                           label="Price"
                           icon={DollarSign}
                           type="number"
@@ -716,31 +777,33 @@ const AdminProducts: React.FC = () => {
                           min="0"
                           required
                           value={formData.price}
-                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          onChange={handleInputChange('price')}
                           placeholder="0.00"
                           error={formErrors.price}
                           helpText="Price in Indian Rupees (₹)"
                         />
                         
                         <StableInput
+                          fieldKey="discount"
                           label="Discount Percentage"
                           icon={Tag}
                           type="number"
                           min="0"
                           max="100"
                           value={formData.discount}
-                          onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                          onChange={handleInputChange('discount')}
                           placeholder="0"
                           error={formErrors.discount}
                           helpText="Optional discount (0-100%)"
                         />
 
                         <StableSelect
+                          fieldKey="category"
                           label="Category"
                           icon={Box}
                           required
                           value={formData.category}
-                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          onChange={handleInputChange('category')}
                           error={formErrors.category}
                           helpText="Select the main product category"
                         >
@@ -751,22 +814,24 @@ const AdminProducts: React.FC = () => {
                         </StableSelect>
 
                         <StableInput
+                          fieldKey="subcategory"
                           label="Subcategory"
                           icon={Hash}
                           value={formData.subcategory}
-                          onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                          onChange={handleInputChange('subcategory')}
                           placeholder="e.g., Drills, Grinders, Safety Gear"
                           helpText="Optional subcategory for better organization"
                         />
 
                         <StableInput
+                          fieldKey="stock"
                           label="Stock Quantity"
                           icon={Package}
                           type="number"
                           min="0"
                           required
                           value={formData.stock}
-                          onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                          onChange={handleInputChange('stock')}
                           placeholder="0"
                           error={formErrors.stock}
                           helpText="Available quantity in inventory"
@@ -784,12 +849,13 @@ const AdminProducts: React.FC = () => {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
                           <StableTextarea
+                            fieldKey="description"
                             label="Description"
                             icon={Info}
                             required
                             rows={4}
                             value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            onChange={handleInputChange('description')}
                             placeholder="Describe the product features, benefits, and specifications..."
                             error={formErrors.description}
                             helpText="Detailed description to help customers understand the product"
@@ -797,22 +863,24 @@ const AdminProducts: React.FC = () => {
                         </div>
 
                         <StableInput
+                          fieldKey="tags"
                           label="Tags"
                           icon={Tag}
                           value={formData.tags}
-                          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                          onChange={handleInputChange('tags')}
                           placeholder="professional, heavy-duty, durable, industrial"
                           helpText="Separate multiple tags with commas"
                         />
 
                         <div className="lg:col-span-1">
                           <StableTextarea
+                            fieldKey="images"
                             label="Image URLs"
                             icon={Image}
                             required
                             rows={3}
                             value={formData.images}
-                            onChange={(e) => setFormData({ ...formData, images: e.target.value })}
+                            onChange={handleInputChange('images')}
                             placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                             error={formErrors.images}
                             helpText="Separate multiple image URLs with commas"
@@ -820,19 +888,21 @@ const AdminProducts: React.FC = () => {
                         </div>
 
                         <StableInput
+                          fieldKey="colors"
                           label="Available Colors"
                           icon={Palette}
                           value={formData.colors}
-                          onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
+                          onChange={handleInputChange('colors')}
                           placeholder="Red, Blue, Black, Yellow"
                           helpText="Separate colors with commas (optional)"
                         />
                         
                         <StableInput
+                          fieldKey="sizes"
                           label="Available Sizes"
                           icon={Ruler}
                           value={formData.sizes}
-                          onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
+                          onChange={handleInputChange('sizes')}
                           placeholder="Small, Medium, Large, XL"
                           helpText="Separate sizes with commas (optional)"
                         />
@@ -848,97 +918,81 @@ const AdminProducts: React.FC = () => {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <StableInput
+                          fieldKey="spec-power"
                           label="Power"
                           icon={Zap}
                           value={formData.specifications.power}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, power: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('power')}
                           placeholder="1200W"
                           helpText="Power consumption or output"
                         />
                         
                         <StableInput
+                          fieldKey="spec-voltage"
                           label="Voltage"
                           icon={Zap}
                           value={formData.specifications.voltage}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, voltage: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('voltage')}
                           placeholder="230V AC"
                           helpText="Operating voltage"
                         />
                         
                         <StableInput
+                          fieldKey="spec-weight"
                           label="Weight"
                           icon={Package}
                           value={formData.specifications.weight}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, weight: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('weight')}
                           placeholder="2.5kg"
                           helpText="Product weight with packaging"
                         />
                         
                         <StableInput
+                          fieldKey="spec-dimensions"
                           label="Dimensions"
                           icon={Ruler}
                           value={formData.specifications.dimensions}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, dimensions: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('dimensions')}
                           placeholder="25 x 15 x 10 cm"
                           helpText="Length x Width x Height"
                         />
                         
                         <StableInput
+                          fieldKey="spec-warranty"
                           label="Warranty"
                           icon={CheckCircle}
                           value={formData.specifications.warranty}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, warranty: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('warranty')}
                           placeholder="2 years"
                           helpText="Warranty period"
                         />
                         
                         <StableInput
+                          fieldKey="spec-manufacturer"
                           label="Manufacturer"
                           icon={User}
                           value={formData.specifications.manufacturer}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, manufacturer: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('manufacturer')}
                           placeholder="YariTools Pro"
                           helpText="Brand or manufacturer name"
                         />
                         
                         <StableInput
+                          fieldKey="spec-country"
                           label="Country of Origin"
                           icon={MapPin}
                           value={formData.specifications.countryOfOrigin}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, countryOfOrigin: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('countryOfOrigin')}
                           placeholder="India"
                           helpText="Manufacturing country"
                         />
                         
                         <StableInput
+                          fieldKey="spec-material"
                           label="Material"
                           icon={Box}
                           value={formData.specifications.material}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            specifications: { ...formData.specifications, material: e.target.value }
-                          })}
+                          onChange={handleSpecificationChange('material')}
                           placeholder="High-grade steel"
                           helpText="Primary construction material"
                         />
