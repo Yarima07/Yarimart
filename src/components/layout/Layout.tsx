@@ -16,7 +16,7 @@ const Layout: React.FC = () => {
   useEffect(() => {
     if (!loading && isAdmin) {
       console.log('[LAYOUT] Admin user detected in user module, redirecting to admin panel');
-      navigate('/admin');
+      navigate('/admin', { replace: true });
     }
   }, [isAdmin, navigate, loading]);
 

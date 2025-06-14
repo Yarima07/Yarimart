@@ -77,12 +77,14 @@ const AdminLayout: React.FC = () => {
       const effectiveIsAdmin = isAdmin || storedAdminStatus;
 
       if (!user) {
-        navigate('/auth');
+        console.log('[ADMIN-LAYOUT] No user found, redirecting to auth');
+        navigate('/auth', { replace: true });
         return;
       }
       
       if (!effectiveIsAdmin) {
-        navigate('/');
+        console.log('[ADMIN-LAYOUT] User is not admin, redirecting to home');
+        navigate('/', { replace: true });
         return;
       }
     };
@@ -139,7 +141,7 @@ const AdminLayout: React.FC = () => {
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   const navigationItems = [
@@ -172,12 +174,6 @@ const AdminLayout: React.FC = () => {
       icon: BarChart3, 
       path: '/admin/analytics',
       description: 'Sales and performance data'
-    },
-    { 
-      name: 'Reports', 
-      icon: FileText, 
-      path: '/admin/reports',
-      description: 'Generate business reports'
     },
     { 
       name: 'Settings', 
@@ -265,13 +261,13 @@ const AdminLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={`flex h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
       {/* Sidebar */}
       <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 hidden lg:flex flex-col`}>
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
           {!sidebarCollapsed && (
-            <Link to="/admin\" className="flex items-center space-x-2">
+            <Link to="/admin" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <Layers className="w-5 h-5 text-white" />
               </div>

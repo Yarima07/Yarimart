@@ -33,6 +33,22 @@ import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminSettings from './pages/admin/AdminSettings';
 
+// 404 Not Found component
+const NotFoundPage: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="text-center">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">404</h1>
+      <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">Page not found</p>
+      <a
+        href="/"
+        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+      >
+        Go back home
+      </a>
+    </div>
+  </div>
+);
+
 function App() {
   return (
     <AuthProvider>
@@ -42,7 +58,6 @@ function App() {
             <Router>
               <CartProvider>
                 <WishlistProvider>
-                  {/* Main Site Routes */}
                   <Routes>
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminLayout />}>
@@ -54,10 +69,11 @@ function App() {
                       <Route path="settings" element={<AdminSettings />} />
                     </Route>
 
-                    {/* Site Routes */}
+                    {/* Main Site Routes */}
                     <Route path="/" element={<Layout />}>
                       <Route index element={<HomePage />} />
-                      <Route path="catalog/:category?" element={<CatalogPage />} />
+                      <Route path="catalog" element={<CatalogPage />} />
+                      <Route path="catalog/:category" element={<CatalogPage />} />
                       <Route path="product/:id" element={<ProductPage />} />
                       <Route path="cart" element={<CartPage />} />
                       <Route path="checkout" element={<CheckoutPage />} />
@@ -73,6 +89,9 @@ function App() {
                       <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
                       <Route path="terms" element={<TermsPage />} />
                     </Route>
+
+                    {/* Catch-all route for 404 */}
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </WishlistProvider>
               </CartProvider>
