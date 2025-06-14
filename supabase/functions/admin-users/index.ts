@@ -44,9 +44,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract the token from the Authorization header
-    const token = authHeader.replace('Bearer ', '');
-    
     // Create a client with the anon key for user authentication verification
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -56,8 +53,8 @@ Deno.serve(async (req) => {
       },
     });
     
-    // Verify the user is authenticated
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+    // Verify the user is authenticated - don't pass token parameter, use the Authorization header
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     
     if (authError || !user) {
       console.error('Authentication error:', authError);
