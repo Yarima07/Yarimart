@@ -27,14 +27,30 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Extract JWT token from Authorization header (format: "Bearer <token>")
+  const token = authHeader.replace('Bearer ', '');
+  if (!token) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid authorization header format' }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   try {
     // Get environment variables (these are pre-populated in Supabase environments)
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing environment variables:', { supabaseUrl: !!supabaseUrl, supabaseServiceKey: !!supabaseServiceKey });
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      console.error('Missing environment variables:', { 
+        supabaseUrl: !!supabaseUrl, 
+        supabaseServiceKey: !!supabaseServiceKey,
+        supabaseAnonKey: !!supabaseAnonKey 
+      });
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
         {
@@ -45,16 +61,10 @@ Deno.serve(async (req) => {
     }
 
     // Create a client with the anon key for user authentication verification
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    });
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
     
-    // Verify the user is authenticated - don't pass token parameter, use the Authorization header
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    // Verify the user is authenticated by passing the JWT token directly
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
     
     if (authError || !user) {
       console.error('Authentication error:', authError);
