@@ -1,14 +1,37 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Product } from '../types/product';
+
+// Helper function to handle Supabase errors
+const handleSupabaseError = (error: any, operation: string) => {
+  if (!isSupabaseConfigured()) {
+    console.error(`❌ Cannot ${operation}: Supabase is not properly configured.`);
+    console.error('Please check your .env file and update with valid Supabase credentials.');
+    return;
+  }
+  
+  console.error(`❌ Error ${operation}:`, error);
+  
+  if (error.message?.includes('Failed to fetch')) {
+    console.error('🌐 Network error: Unable to connect to Supabase.');
+    console.error('Please check:');
+    console.error('1. Your internet connection');
+    console.error('2. That your Supabase project is active (not paused)');
+    console.error('3. That your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are correct');
+  }
+};
 
 // This function now fetches products from Supabase instead of using local data
 export const getProducts = async (): Promise<Product[]> => {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('products')
     .select('*');
     
   if (error) {
-    console.error('Error fetching products:', error);
+    handleSupabaseError(error, 'fetching products');
     return [];
   }
   
@@ -17,6 +40,10 @@ export const getProducts = async (): Promise<Product[]> => {
 
 // Get a product by ID from Supabase
 export const getProductById = async (id: string): Promise<Product | null> => {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -24,7 +51,7 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     .single();
     
   if (error) {
-    console.error('Error fetching product:', error);
+    handleSupabaseError(error, 'fetching product');
     return null;
   }
   
@@ -33,6 +60,10 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 
 // Get products by category from Supabase
 export const getProductsByCategory = async (category: string): Promise<Product[]> => {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   if (category === 'new') {
     // Get products from the last 30 days
     const thirtyDaysAgo = new Date();
@@ -45,7 +76,7 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
       .order('created_at', { ascending: false });
       
     if (error) {
-      console.error('Error fetching new products:', error);
+      handleSupabaseError(error, 'fetching new products');
       return [];
     }
     
@@ -60,7 +91,7 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
       .limit(8);
       
     if (error) {
-      console.error('Error fetching featured products:', error);
+      handleSupabaseError(error, 'fetching featured products');
       return [];
     }
     
@@ -75,7 +106,7 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
       .order('discount', { ascending: false });
       
     if (error) {
-      console.error('Error fetching sale products:', error);
+      handleSupabaseError(error, 'fetching sale products');
       return [];
     }
     
@@ -90,7 +121,7 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
       .order('created_at', { ascending: false });
       
     if (error) {
-      console.error('Error fetching all products:', error);
+      handleSupabaseError(error, 'fetching all products');
       return [];
     }
     
@@ -109,7 +140,7 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
     .ilike('category', normalizedCategory);
     
   if (error) {
-    console.error('Error fetching products by category:', error);
+    handleSupabaseError(error, `fetching products by category "${normalizedCategory}"`);
     return [];
   }
   
@@ -120,6 +151,10 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
 
 // Get related products from Supabase
 export const getRelatedProducts = async (productId: string, category: string): Promise<Product[]> => {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -128,7 +163,7 @@ export const getRelatedProducts = async (productId: string, category: string): P
     .limit(4);
     
   if (error) {
-    console.error('Error fetching related products:', error);
+    handleSupabaseError(error, 'fetching related products');
     return [];
   }
   
@@ -137,13 +172,17 @@ export const getRelatedProducts = async (productId: string, category: string): P
 
 // Get all unique categories from products
 export const getCategories = async (): Promise<string[]> => {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('products')
     .select('category')
     .order('category');
     
   if (error) {
-    console.error('Error fetching categories:', error);
+    handleSupabaseError(error, 'fetching categories');
     return [];
   }
   
