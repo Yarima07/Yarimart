@@ -32,6 +32,206 @@ interface FormErrors {
   [key: string]: string;
 }
 
+// Move form components outside to prevent recreation on each render
+const FormInput = React.memo(({ 
+  label, 
+  icon: Icon, 
+  error, 
+  helpText, 
+  required = false,
+  type = 'text',
+  value,
+  onChange,
+  placeholder,
+  ...props 
+}: {
+  label: string;
+  icon?: any;
+  error?: string;
+  helpText?: string;
+  required?: boolean;
+  type?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  [key: string]: any;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const id = useMemo(() => `input-${label.toLowerCase().replace(/\s+/g, '-')}`, [label]);
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
+        <span>{label}</span>
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </div>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
+            error 
+              ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          }`}
+          {...props}
+        />
+      </div>
+      <div className="min-h-[1.25rem]">
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {helpText && !error && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+            {helpText}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+});
+
+const FormTextarea = React.memo(({ 
+  label, 
+  icon: Icon, 
+  error, 
+  helpText, 
+  required = false,
+  rows = 3,
+  value,
+  onChange,
+  placeholder,
+  ...props 
+}: {
+  label: string;
+  icon?: any;
+  error?: string;
+  helpText?: string;
+  required?: boolean;
+  rows?: number;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  [key: string]: any;
+}) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const id = useMemo(() => `textarea-${label.toLowerCase().replace(/\s+/g, '-')}`, [label]);
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
+        <span>{label}</span>
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </div>
+      <div className="relative">
+        <textarea
+          ref={textareaRef}
+          id={id}
+          rows={rows}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
+            error 
+              ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          }`}
+          {...props}
+        />
+      </div>
+      <div className="min-h-[1.25rem]">
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {helpText && !error && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+            {helpText}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+});
+
+const FormSelect = React.memo(({ 
+  label, 
+  icon: Icon, 
+  error, 
+  helpText, 
+  required = false,
+  value,
+  onChange,
+  children,
+  ...props 
+}: {
+  label: string;
+  icon?: any;
+  error?: string;
+  helpText?: string;
+  required?: boolean;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  children: React.ReactNode;
+  [key: string]: any;
+}) => {
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const id = useMemo(() => `select-${label.toLowerCase().replace(/\s+/g, '-')}`, [label]);
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
+        <span>{label}</span>
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </div>
+      <div className="relative">
+        <select
+          ref={selectRef}
+          id={id}
+          value={value}
+          onChange={onChange}
+          className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
+            error 
+              ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          }`}
+          {...props}
+        >
+          {children}
+        </select>
+      </div>
+      <div className="min-h-[1.25rem]">
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {helpText && !error && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+            <Info className="h-4 w-4 mr-1 flex-shrink-0" />
+            {helpText}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+});
+
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -43,8 +243,8 @@ const AdminProducts: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // Form state
-  const [formData, setFormData] = useState({
+  // Form state with stable initial values
+  const [formData, setFormData] = useState(() => ({
     name: '',
     price: '',
     discount: '',
@@ -66,23 +266,23 @@ const AdminProducts: React.FC = () => {
       countryOfOrigin: '',
       material: ''
     }
-  });
+  }));
 
   // All available categories - comprehensive list
-  const allCategories = [
+  const allCategories = useMemo(() => [
     'Power Tools',
     'Safety Equipment', 
     'Industrial Equipment',
     'Hand Tools',
     'Spare Parts'
-  ];
+  ], []);
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, [selectedCategory]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       console.log('Fetching categories from database...');
       const dbCategories = await getCategories();
@@ -103,9 +303,9 @@ const AdminProducts: React.FC = () => {
       // Always fallback to all categories
       setCategories(allCategories);
     }
-  };
+  }, [allCategories]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase.from('products').select('*');
@@ -124,9 +324,9 @@ const AdminProducts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
 
-  // Memoized validation function to prevent unnecessary re-runs
+  // Stable validation function
   const validateForm = useCallback(() => {
     const errors: FormErrors = {};
 
@@ -147,7 +347,7 @@ const AdminProducts: React.FC = () => {
     return Object.keys(errors).length === 0;
   }, [formData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -219,9 +419,9 @@ const AdminProducts: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [formData, validateForm, editingProduct, fetchProducts, fetchCategories]);
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = useCallback((product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -248,9 +448,9 @@ const AdminProducts: React.FC = () => {
     });
     setFormErrors({});
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleDelete = async (productId: string) => {
+  const handleDelete = useCallback(async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
@@ -267,9 +467,9 @@ const AdminProducts: React.FC = () => {
       console.error('Error deleting product:', error);
       alert('Error deleting product');
     }
-  };
+  }, [fetchProducts]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       name: '',
       price: '',
@@ -294,9 +494,9 @@ const AdminProducts: React.FC = () => {
       }
     });
     setFormErrors({});
-  };
+  }, []);
 
-  // Optimized change handlers with useCallback to prevent re-renders
+  // Stable change handlers with useCallback to prevent re-renders
   const handleInputChange = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.value;
     setFormData(prev => ({
@@ -333,214 +533,12 @@ const AdminProducts: React.FC = () => {
     );
   }, [products, searchQuery]);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR'
     }).format(amount);
-  };
-
-  // Stable Input Component with better focus management
-  const FormInput = React.memo(({ 
-    label, 
-    icon: Icon, 
-    error, 
-    helpText, 
-    required = false,
-    type = 'text',
-    value,
-    onChange,
-    placeholder,
-    ...props 
-  }: {
-    label: string;
-    icon?: any;
-    error?: string;
-    helpText?: string;
-    required?: boolean;
-    type?: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder?: string;
-    [key: string]: any;
-  }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const id = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
-    
-    return (
-      <div className="space-y-1">
-        <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-          {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
-          <span>{label}</span>
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </div>
-        <div className="relative">
-          <input
-            ref={inputRef}
-            id={id}
-            type={type}
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
-              error 
-                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
-            {...props}
-          />
-        </div>
-        <div className="min-h-[1.25rem]">
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-              {error}
-            </p>
-          )}
-          {helpText && !error && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-              <Info className="h-4 w-4 mr-1 flex-shrink-0" />
-              {helpText}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  });
-
-  // Stable Textarea Component
-  const FormTextarea = React.memo(({ 
-    label, 
-    icon: Icon, 
-    error, 
-    helpText, 
-    required = false,
-    rows = 3,
-    value,
-    onChange,
-    placeholder,
-    ...props 
-  }: {
-    label: string;
-    icon?: any;
-    error?: string;
-    helpText?: string;
-    required?: boolean;
-    rows?: number;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    placeholder?: string;
-    [key: string]: any;
-  }) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const id = `textarea-${label.toLowerCase().replace(/\s+/g, '-')}`;
-    
-    return (
-      <div className="space-y-1">
-        <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-          {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
-          <span>{label}</span>
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </div>
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            id={id}
-            rows={rows}
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-vertical ${
-              error 
-                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
-            {...props}
-          />
-        </div>
-        <div className="min-h-[1.25rem]">
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-              {error}
-            </p>
-          )}
-          {helpText && !error && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-              <Info className="h-4 w-4 mr-1 flex-shrink-0" />
-              {helpText}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  });
-
-  // Stable Select Component
-  const FormSelect = React.memo(({ 
-    label, 
-    icon: Icon, 
-    error, 
-    helpText, 
-    required = false,
-    value,
-    onChange,
-    children,
-    ...props 
-  }: {
-    label: string;
-    icon?: any;
-    error?: string;
-    helpText?: string;
-    required?: boolean;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    children: React.ReactNode;
-    [key: string]: any;
-  }) => {
-    const selectRef = useRef<HTMLSelectElement>(null);
-    const id = `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
-    
-    return (
-      <div className="space-y-1">
-        <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-          {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />}
-          <span>{label}</span>
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </div>
-        <div className="relative">
-          <select
-            ref={selectRef}
-            id={id}
-            value={value}
-            onChange={onChange}
-            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white ${
-              error 
-                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20' 
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
-            {...props}
-          >
-            {children}
-          </select>
-        </div>
-        <div className="min-h-[1.25rem]">
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-              {error}
-            </p>
-          )}
-          {helpText && !error && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-              <Info className="h-4 w-4 mr-1 flex-shrink-0" />
-              {helpText}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  });
+  }, []);
 
   return (
     <div>
@@ -625,6 +623,9 @@ const AdminProducts: React.FC = () => {
                   Product
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Item ID
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Category
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -641,7 +642,7 @@ const AdminProducts: React.FC = () => {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center">
+                  <td colSpan={6} className="px-6 py-4 text-center">
                     <div className="animate-pulse flex justify-center">
                       <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded"></div>
                     </div>
@@ -674,6 +675,14 @@ const AdminProducts: React.FC = () => {
                             }
                           </div>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-mono text-gray-900 dark:text-white">
+                        #{product.id.slice(0, 8).toUpperCase()}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        ID: {product.id.slice(-8)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -721,7 +730,7 @@ const AdminProducts: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                     {searchQuery ? 'No products found matching your search.' : 'No products found in this category.'}
                   </td>
                 </tr>
