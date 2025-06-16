@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
@@ -26,39 +26,34 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { isSupabaseConfigured } from './lib/supabase';
 
-// Admin pages - only load if Supabase is configured
-let AdminLayout: React.ComponentType<any> | null = null;
-let AdminDashboard: React.ComponentType<any> | null = null;
-let AdminOrders: React.ComponentType<any> | null = null;
-let AdminProducts: React.ComponentType<any> | null = null;
-let AdminCustomers: React.ComponentType<any> | null = null;
-let AdminAnalytics: React.ComponentType<any> | null = null;
-let AdminSettings: React.ComponentType<any> | null = null;
-
 // Lazy load admin components only if Supabase is configured
-if (isSupabaseConfigured()) {
-  try {
-    const adminModules = await Promise.all([
-      import('./pages/admin/AdminLayout'),
-      import('./pages/admin/AdminDashboard'),
-      import('./pages/admin/AdminOrders'),
-      import('./pages/admin/AdminProducts'),
-      import('./pages/admin/AdminCustomers'),
-      import('./pages/admin/AdminAnalytics'),
-      import('./pages/admin/AdminSettings')
-    ]);
-    
-    AdminLayout = adminModules[0].default;
-    AdminDashboard = adminModules[1].default;
-    AdminOrders = adminModules[2].default;
-    AdminProducts = adminModules[3].default;
-    AdminCustomers = adminModules[4].default;
-    AdminAnalytics = adminModules[5].default;
-    AdminSettings = adminModules[6].default;
-  } catch (error) {
-    console.warn('Admin components could not be loaded:', error);
-  }
-}
+const AdminLayout = isSupabaseConfigured() 
+  ? React.lazy(() => import('./pages/admin/AdminLayout').catch(() => ({ default: AdminAccessDenied })))
+  : null;
+
+const AdminDashboard = isSupabaseConfigured()
+  ? React.lazy(() => import('./pages/admin/AdminDashboard').catch(() => ({ default: AdminAccessDenied })))
+  : null;
+
+const AdminOrders = isSupabaseConfigured()
+  ? React.lazy(() => import('./pages/admin/AdminOrders').catch(() => ({ default: AdminAccessDenied })))
+  : null;
+
+const AdminProducts = isSupabaseConfigured()
+  ? React.lazy(() => import('./pages/admin/AdminProducts').catch(() => ({ default: AdminAccessDenied })))
+  : null;
+
+const AdminCustomers = isSupabaseConfigured()
+  ? React.lazy(() => import('./pages/admin/AdminCustomers').catch(() => ({ default: AdminAccessDenied })))
+  : null;
+
+const AdminAnalytics = isSupabaseConfigured()
+  ? React.lazy(() => import('./pages/admin/AdminAnalytics').catch(() => ({ default: AdminAccessDenied })))
+  : null;
+
+const AdminSettings = isSupabaseConfigured()
+  ? React.lazy(() => import('./pages/admin/AdminSettings').catch(() => ({ default: AdminAccessDenied })))
+  : null;
 
 // 404 Not Found component
 const NotFoundPage: React.FC = () => (
@@ -96,6 +91,13 @@ const AdminAccessDenied: React.FC = () => (
   </div>
 );
 
+// Loading component for Suspense fallback
+const LoadingSpinner: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+  </div>
+);
+
 function App() {
   return (
     <ErrorBoundary>
@@ -109,13 +111,53 @@ function App() {
                     <Routes>
                       {/* Admin Routes - only if Supabase is configured and components loaded */}
                       {isSupabaseConfigured() && AdminLayout ? (
-                        <Route path="/admin" element={<AdminLayout />}>
-                          <Route index element={AdminDashboard ? <AdminDashboard /> : <AdminAccessDenied />} />
-                          <Route path="orders" element={AdminOrders ? <AdminOrders /> : <AdminAccessDenied />} />
-                          <Route path="products" element={AdminProducts ? <AdminProducts /> : <AdminAccessDenied />} />
-                          <Route path="customers" element={AdminCustomers ? <AdminCustomers /> : <AdminAccessDenied />} />
-                          <Route path="analytics" element={AdminAnalytics ? <AdminAnalytics /> : <AdminAccessDenied />} />
-                          <Route path="settings" element={AdminSettings ? <AdminSettings /> : <AdminAccessDenied />} />
+                        <Route path="/admin" element={
+                          <Suspense fallback={<LoadingSpinner />}>
+                            <AdminLayout />
+                          </Suspense>
+                        }>
+                          <Route index element={
+                            AdminDashboard ? (
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <AdminDashboard />
+                              </Suspense>
+                            ) : <AdminAccessDenied />
+                          } />
+                          <Route path="orders" element={
+                            AdminOrders ? (
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <AdminOrders />
+                              </Suspense>
+                            ) : <AdminAccessDenied />
+                          } />
+                          <Route path="products" element={
+                            AdminProducts ? (
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <AdminProducts />
+                              </Suspense>
+                            ) : <AdminAccessDenied />
+                          } />
+                          <Route path="customers" element={
+                            AdminCustomers ? (
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <AdminCustomers />
+                              </Suspense>
+                            ) : <AdminAccessDenied />
+                          } />
+                          <Route path="analytics" element={
+                            AdminAnalytics ? (
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <AdminAnalytics />
+                              </Suspense>
+                            ) : <AdminAccessDenied />
+                          } />
+                          <Route path="settings" element={
+                            AdminSettings ? (
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <AdminSettings />
+                              </Suspense>
+                            ) : <AdminAccessDenied />
+                          } />
                         </Route>
                       ) : (
                         <Route path="/admin/*" element={<AdminAccessDenied />} />
