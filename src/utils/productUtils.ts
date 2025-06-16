@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Product } from '../types/product';
 
-// Demo products for when Supabase is not configured
+// Demo products for when Supabase is not configured or not reachable
 const DEMO_PRODUCTS: Product[] = [
   {
     id: 'demo-1',
@@ -114,35 +114,83 @@ const DEMO_PRODUCTS: Product[] = [
   }
 ];
 
-// Helper function to handle Supabase errors
-const handleSupabaseError = (error: any, operation: string) => {
-  console.error(`❌ Error ${operation}:`, error);
-  
-  if (error.message?.includes('Failed to fetch')) {
-    console.error('🌐 Network error: Unable to connect to Supabase.');
+// Track if we've already shown network error warning to avoid spam
+let networkErrorShown = false;
+
+// Helper function to handle Supabase errors gracefully
+const handleSupabaseError = (error: any, operation: string): boolean => {
+  // Check if this is a network connectivity issue
+  const isNetworkError = error.message?.includes('Failed to fetch') || 
+                         error.message?.includes('NetworkError') ||
+                         error.code === 'NETWORK_ERROR' ||
+                         error.name === 'TypeError';
+
+  if (isNetworkError && !networkErrorShown) {
+    console.info('🔌 Network connectivity issue detected. Running in offline mode with demo data.');
+    console.info('💡 This is normal if you\'re offline or if there are temporary network issues.');
+    networkErrorShown = true;
+    return true;
+  }
+
+  // For non-network errors, show more specific error information
+  if (!isNetworkError) {
+    console.warn(`⚠️ Database ${operation} issue:`, error.message || error);
+    console.info('📱 Switching to demo mode for continued functionality.');
+  }
+
+  return isNetworkError;
+};
+
+// Enhanced network connectivity check
+const checkNetworkConnectivity = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured()) {
+    return false;
+  }
+
+  try {
+    // Try a simple health check query with timeout
+    const { error } = await Promise.race([
+      supabase.from('products').select('id').limit(1).single(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
+      )
+    ]) as any;
+
+    return !error;
+  } catch (error) {
+    return false;
   }
 };
 
 // This function now fetches products from Supabase or returns demo data
 export const getProducts = async (): Promise<Product[]> => {
   if (!isSupabaseConfigured()) {
-    console.log('📱 Using demo products');
+    console.log('📱 Using demo products (Supabase not configured)');
     return DEMO_PRODUCTS;
   }
 
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*');
+    const { data, error } = await Promise.race([
+      supabase.from('products').select('*'),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+    ]) as any;
       
     if (error) {
-      handleSupabaseError(error, 'fetching products');
-      return DEMO_PRODUCTS; // Fallback to demo data
+      const isNetworkError = handleSupabaseError(error, 'fetching products');
+      return DEMO_PRODUCTS; // Always fallback to demo data
+    }
+    
+    // Successfully got data from Supabase
+    if (networkErrorShown) {
+      console.info('✅ Network connectivity restored. Using live data.');
+      networkErrorShown = false;
     }
     
     return data as Product[];
   } catch (error) {
-    console.warn('Falling back to demo products due to error:', error);
+    handleSupabaseError(error, 'fetching products');
     return DEMO_PRODUCTS;
   }
 };
@@ -154,11 +202,12 @@ export const getProductById = async (id: string): Promise<Product | null> => {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await Promise.race([
+      supabase.from('products').select('*').eq('id', id).single(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+    ]) as any;
       
     if (error) {
       handleSupabaseError(error, 'fetching product');
@@ -167,7 +216,7 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     
     return data as Product;
   } catch (error) {
-    console.warn('Falling back to demo product due to error:', error);
+    handleSupabaseError(error, 'fetching product');
     return DEMO_PRODUCTS.find(p => p.id === id) || null;
   }
 };
@@ -227,3 +276,6 @@ export const getCategories = async (): Promise<string[]> => {
   const categories = [...new Set(allProducts.map(product => product.category))];
   return categories.sort();
 };
+
+// Export network connectivity check for use in components
+export { checkNetworkConnectivity };
