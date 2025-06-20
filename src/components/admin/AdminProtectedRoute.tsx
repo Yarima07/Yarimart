@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
-import { AlertTriangle, Shield, RefreshCw, LogOut } from 'lucide-react';
+import { AlertTriangle, Shield, RefreshCw, LogOut, Home } from 'lucide-react';
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode;
