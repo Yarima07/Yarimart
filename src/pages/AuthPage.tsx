@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, Eye, EyeOff, Settings } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Settings, ExternalLink, Copy, CheckCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured, getSupabaseConfig } from '../lib/supabase';
 
 const ADMIN_EMAILS = [
@@ -21,6 +21,7 @@ const AuthPage: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { signIn, signUp, isAdmin } = useAuth();
   const navigate = useNavigate();
   
@@ -77,7 +78,7 @@ const AuthPage: React.FC = () => {
       
       // Check if Supabase is configured
       if (!isSupabaseConfigured()) {
-        throw new Error('Authentication service is not available. Please contact support or check your configuration.');
+        throw new Error('Authentication service is not available. Please check the configuration or contact support.');
       }
       
       // Prevent signup with admin email for regular users
@@ -143,6 +144,12 @@ const AuthPage: React.FC = () => {
     setShowPassword(!showPassword);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const supabaseConfig = getSupabaseConfig();
 
   return (
@@ -168,7 +175,7 @@ const AuthPage: React.FC = () => {
                     <AlertCircle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
                       Authentication service requires configuration
                     </p>
                   </div>
@@ -182,14 +189,84 @@ const AuthPage: React.FC = () => {
               </div>
               
               {showConfig && (
-                <div className="mt-4 text-xs space-y-2">
-                  <div className="font-mono bg-yellow-100 dark:bg-yellow-900/40 p-2 rounded">
-                    <div>URL: {supabaseConfig.hasValidUrl ? '✅' : '❌'}</div>
-                    <div>Key: {supabaseConfig.hasValidKey ? '✅' : '❌'}</div>
+                <div className="mt-4 space-y-4">
+                  {/* Status indicators */}
+                  <div className="bg-yellow-100 dark:bg-yellow-900/40 p-3 rounded">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span className="font-medium">Status:</span>
+                      <span className={`inline-flex items-center ${supabaseConfig.hasValidUrl ? 'text-green-600' : 'text-red-600'}`}>
+                        URL: {supabaseConfig.hasValidUrl ? '✅' : '❌'}
+                      </span>
+                      <span className={`inline-flex items-center ${supabaseConfig.hasValidKey ? 'text-green-600' : 'text-red-600'}`}>
+                        Key: {supabaseConfig.hasValidKey ? '✅' : '❌'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-yellow-600 dark:text-yellow-400">
-                    Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
-                  </p>
+
+                  {/* Instructions */}
+                  <div className="text-sm space-y-3">
+                    <div>
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                        For Deployed Site (Netlify):
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1 text-yellow-700 dark:text-yellow-300">
+                        <li>Go to your Netlify dashboard</li>
+                        <li>Select your site</li>
+                        <li>Go to Site settings → Environment variables</li>
+                        <li>Add these variables:</li>
+                      </ol>
+                      
+                      <div className="mt-2 space-y-2">
+                        <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded border">
+                          <div className="flex items-center justify-between">
+                            <code className="text-xs">VITE_SUPABASE_URL</code>
+                            <button
+                              onClick={() => copyToClipboard('VITE_SUPABASE_URL')}
+                              className="text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                            >
+                              {copied ? <CheckCircle className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            Your Supabase project URL
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded border">
+                          <div className="flex items-center justify-between">
+                            <code className="text-xs">VITE_SUPABASE_ANON_KEY</code>
+                            <button
+                              onClick={() => copyToClipboard('VITE_SUPABASE_ANON_KEY')}
+                              className="text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                            >
+                              {copied ? <CheckCircle className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            Your Supabase anon public key
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-yellow-200 dark:border-yellow-700 pt-3">
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                        Need help finding your Supabase keys?
+                      </p>
+                      <a
+                        href="https://app.supabase.io"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm"
+                      >
+                        Open Supabase Dashboard
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </a>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                        Go to Project Settings → API to find your keys
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
