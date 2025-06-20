@@ -37,6 +37,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log('[AUTH] Provider initialized, Supabase configured:', isSupabaseConfigured());
+    
     // If Supabase is not configured, set loading to false and return
     if (!isSupabaseConfigured()) {
       console.log('[AUTH] Supabase not configured, running in demo mode');
@@ -44,8 +46,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    console.log('[AUTH] Provider initialized');
-    
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('[AUTH] Session retrieved:', session ? 'yes' : 'no');
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string) => {
     if (!isSupabaseConfigured()) {
-      throw new Error('Authentication is not available in demo mode');
+      throw new Error('Authentication requires Supabase configuration. Please contact support.');
     }
     
     console.log(`[AUTH] Attempting to sign up: ${email}`);
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     if (!isSupabaseConfigured()) {
-      throw new Error('Authentication is not available in demo mode');
+      throw new Error('Authentication requires Supabase configuration. Please contact support.');
     }
     
     console.log(`[AUTH] Attempting to sign in: ${email}`);
